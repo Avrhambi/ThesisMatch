@@ -7,10 +7,10 @@
 - [x] Run `npm run verify`
 
 ## Milestone 2 — Persistent profile and simple shell
-- [ ] Read `SPEC.md` and `SCHEMA.md`; build the Hebrew RTL navigation and the Researchers, Researcher Detail, and Outreach routes with empty/loading/error states.
-- [ ] Implement research-profile editing and one-current-CV PDF upload, extraction, replacement, and contact-detail redaction.
-- [ ] Add unit tests for validation, CV limits, redaction, and current-CV uniqueness behavior.
-- [ ] Run `npm run verify`
+- [x] Read `SPEC.md` and `SCHEMA.md`; build the Hebrew RTL navigation and the Researchers, Researcher Detail, and Outreach routes with empty/loading/error states.
+- [x] Implement research-profile editing and one-current-CV PDF upload, extraction, replacement, and contact-detail redaction.
+- [x] Add unit tests for validation, CV limits, redaction, and current-CV uniqueness behavior.
+- [x] Run `npm run verify`
 
 ## Milestone 3 — Researcher discovery and tracking
 - [ ] Read `SPEC.md` and `SCHEMA.md`; implement CRIS faculty-person discovery and validation against the five institute pages with 15-second fetch timeouts.
