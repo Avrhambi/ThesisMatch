@@ -243,18 +243,24 @@ export interface AnalysisCandidate {
 
 // Highest preliminary-match researcher with no completed deep analysis yet,
 // excluding ones already marked not_interested/closed. Used by "Ask for
-// another review" to auto-pick the next researcher to analyze.
-export async function findNextAnalysisCandidate(): Promise<AnalysisCandidate | null> {
+// another review" and the ready-for-review auto-fill to pick the next
+// researcher to analyze. `excludeIds` lets a caller skip candidates it
+// already tried and failed on in the current session -- a failed attempt
+// doesn't count as "completed", so without this the same failing candidate
+// (e.g. no importable publications) would be picked again indefinitely.
+export async function findNextAnalysisCandidate(excludeIds: string[] = []): Promise<AnalysisCandidate | null> {
   const { rows } = await query<{ id: string; full_name: string }>(
     `SELECT r.id, r.full_name
      FROM researchers r
      WHERE r.decision NOT IN ('not_interested', 'closed')
+       AND NOT (r.id = ANY($1::uuid[]))
        AND NOT EXISTS (
          SELECT 1 FROM analyses a
          WHERE a.researcher_id = r.id AND a.kind = 'researcher_deep_analysis' AND a.state IN ('completed', 'completed_with_gaps')
        )
      ORDER BY r.preliminary_match DESC, r.discovered_at ASC
      LIMIT 1`,
+    [excludeIds],
   );
   const row = rows[0];
   return row ? { id: row.id, fullName: row.full_name } : null;
