@@ -34,6 +34,23 @@ export async function getResearcherById(id: string): Promise<Researcher | null> 
   };
 }
 
+export interface ResearcherImportRecord {
+  id: string;
+  fullName: string;
+  normalizedName: string;
+  orcid: string | null;
+}
+
+export async function getResearcherRecordForImport(id: string): Promise<ResearcherImportRecord | null> {
+  const { rows } = await query<{ id: string; full_name: string; normalized_name: string; orcid: string | null }>(
+    "SELECT id, full_name, normalized_name, orcid FROM researchers WHERE id = $1",
+    [id],
+  );
+  const row = rows[0];
+  if (!row) return null;
+  return { id: row.id, fullName: row.full_name, normalizedName: row.normalized_name, orcid: row.orcid };
+}
+
 export interface QueryableClient {
   query: <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<{ rows: T[] }>;
 }
