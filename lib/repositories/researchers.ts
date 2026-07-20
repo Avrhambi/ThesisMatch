@@ -8,6 +8,7 @@ export interface Researcher {
   crisUrl: string;
   decision: string;
   preliminaryMatch: string;
+  personalNote: string | null;
 }
 
 export async function getResearcherById(id: string): Promise<Researcher | null> {
@@ -17,8 +18,9 @@ export async function getResearcherById(id: string): Promise<Researcher | null> 
     cris_url: string;
     decision: string;
     preliminary_match: string;
+    personal_note: string | null;
   }>(
-    "SELECT id, full_name, cris_url, decision, preliminary_match FROM researchers WHERE id = $1",
+    "SELECT id, full_name, cris_url, decision, preliminary_match, personal_note FROM researchers WHERE id = $1",
     [id],
   );
 
@@ -31,6 +33,7 @@ export async function getResearcherById(id: string): Promise<Researcher | null> 
     crisUrl: row.cris_url,
     decision: row.decision,
     preliminaryMatch: row.preliminary_match,
+    personalNote: row.personal_note,
   };
 }
 

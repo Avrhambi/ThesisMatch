@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import { getResearcherById } from "../../../lib/repositories/researchers";
 import { listPapersForResearcher } from "../../../lib/repositories/papers";
-import PapersPanel from "../../../components/PapersPanel";
-import AnalysisPanel from "../../../components/AnalysisPanel";
-import EvidencePanel from "../../../components/EvidencePanel";
-import ContactTimeline from "../../../components/ContactTimeline";
+import ResearcherFlow from "../../../components/ResearcherFlow";
+import type { DecisionStatus } from "../../../lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -34,14 +32,12 @@ export default async function ResearcherDetailPage({
         </a>
       </p>
 
-      <div className="space-y-4">
-        <AnalysisPanel researcherId={researcher.id} />
-
-        <PapersPanel researcherId={researcher.id} initialPapers={papers} />
-
-        <EvidencePanel researcherId={researcher.id} />
-        <ContactTimeline researcherId={researcher.id} />
-      </div>
+      <ResearcherFlow
+        researcherId={researcher.id}
+        initialDecision={researcher.decision as DecisionStatus}
+        initialPersonalNote={researcher.personalNote}
+        initialPapers={papers}
+      />
     </main>
   );
 }

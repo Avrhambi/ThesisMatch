@@ -1,5 +1,6 @@
 import ResearchersList from "../../components/ResearchersList";
 import ReadyForReviewPanel from "../../components/ReadyForReviewPanel";
+import RecentlyDecidedPanel from "../../components/RecentlyDecidedPanel";
 
 export default function ResearchersPage() {
   return (
@@ -8,6 +9,7 @@ export default function ResearchersPage() {
         <h1 className="font-display text-2xl font-semibold text-ink">Researchers</h1>
         <div className="mt-6">
           <ReadyForReviewPanel />
+          <RecentlyDecidedPanel />
         </div>
       </div>
       <ResearchersList />

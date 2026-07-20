@@ -30,6 +30,39 @@ export async function listStatusEvents(researcherId: string): Promise<StatusEven
   }));
 }
 
+export interface RecentStatusEvent extends StatusEvent {
+  researcherName: string;
+}
+
+// Powers the "Recently decided" panel: the most recent status transitions
+// across all researchers, so you can see who you advanced vs. rejected at a
+// glance without opening each one.
+export async function listRecentStatusEvents(limit: number): Promise<RecentStatusEvent[]> {
+  const { rows } = await query<{
+    id: string;
+    researcher_id: string;
+    researcher_name: string;
+    old_decision: DecisionStatus | null;
+    new_decision: DecisionStatus;
+    changed_at: string;
+  }>(
+    `SELECT e.id, e.researcher_id, r.full_name AS researcher_name, e.old_decision, e.new_decision, e.changed_at
+     FROM researcher_status_events e
+     JOIN researchers r ON r.id = e.researcher_id
+     ORDER BY e.changed_at DESC
+     LIMIT $1`,
+    [limit],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    researcherId: row.researcher_id,
+    researcherName: row.researcher_name,
+    oldDecision: row.old_decision,
+    newDecision: row.new_decision,
+    changedAt: row.changed_at,
+  }));
+}
+
 export async function createStatusEvent(
   researcherId: string,
   oldDecision: DecisionStatus | null,

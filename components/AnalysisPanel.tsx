@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   ACCESS_LEVEL_LABELS,
@@ -67,7 +66,18 @@ async function fetchAdditionalPapers(researcherId: string): Promise<PaperReview[
   return body.papers ?? [];
 }
 
-export default function AnalysisPanel({ researcherId }: { researcherId: string }) {
+export interface AnalysisPanelSections {
+  verdict: boolean;
+  papers: boolean;
+}
+
+export default function AnalysisPanel({
+  researcherId,
+  sections = { verdict: true, papers: true },
+}: {
+  researcherId: string;
+  sections?: AnalysisPanelSections;
+}) {
   const [state, setState] = useState<PanelState>({ kind: "loading" });
   const [additionalPapers, setAdditionalPapers] = useState<PaperReview[]>([]);
   const [titlesInput, setTitlesInput] = useState("");
@@ -166,10 +176,11 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
   }
 
   if (state.kind === "loading") {
-    return <p className="text-sm text-muted">Loading analysis&hellip;</p>;
+    return sections.verdict ? <p className="text-sm text-muted">Loading analysis&hellip;</p> : null;
   }
 
   if (state.kind === "confirm_extra") {
+    if (!sections.verdict) return null;
     const confirm = () => (state.action === "deep" ? runDeepAnalysis(true) : runAdditionalAnalysis(true));
     return (
       <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg p-4 text-sm text-ink">
@@ -194,6 +205,7 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
   }
 
   if (state.kind === "error") {
+    if (!sections.verdict) return null;
     return (
       <div className="rounded-[var(--radius-card)] border border-danger/30 bg-danger-bg p-4 text-sm text-danger">
         <p className="mb-2">{state.message}</p>
@@ -205,6 +217,7 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
   }
 
   if (state.kind === "empty") {
+    if (!sections.verdict) return null;
     return (
       <div className="rounded-[var(--radius-card)] border border-dashed border-rule p-8 text-center text-ink">
         <p className="mb-3">{ANALYSIS_STATE_LABELS.not_analyzed}</p>
@@ -223,8 +236,11 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
   const review = (analysis.result ?? null) as ResearcherReview | null;
   const allPapers = review ? [...review.papers, ...additionalPapers] : additionalPapers;
 
+  if (!sections.verdict && !sections.papers) return null;
+
   return (
     <div className="space-y-4 rounded-[var(--radius-card)] border border-rule bg-paper p-4">
+      {sections.verdict && (
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-ink">{ANALYSIS_STATE_LABELS[analysis.state as AnalysisState]}</span>
         {analysis.state === "failed" && (
@@ -237,8 +253,9 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
           </button>
         )}
       </div>
+      )}
 
-      {review && (
+      {sections.verdict && review && (
         <div className="space-y-4 rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
           {/* Decision comes first: priority, supervision risk, and why -- before the descriptive summary. */}
           <div className="flex flex-wrap items-center gap-2">
@@ -321,7 +338,7 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
         </div>
       )}
 
-      {allPapers.length > 0 && (
+      {sections.papers && allPapers.length > 0 && (
         <div className="rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
           <p className="mb-2 font-medium">Publication review</p>
           <ul className="space-y-3">
@@ -368,41 +385,26 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
         </div>
       )}
 
-      <div>
-        <h3 className="mb-2 text-sm font-semibold text-ink">Add publications to the analysis</h3>
-        <p className="mb-2 text-xs text-muted">
-          Up to 10 titles, one per line. The analysis will be appended to the existing review.
-        </p>
-        <textarea
-          value={titlesInput}
-          onChange={(e) => setTitlesInput(e.target.value)}
-          rows={3}
-          placeholder="One publication title per line"
-          className="w-full rounded-[var(--radius-input)] border border-rule bg-paper p-2 text-sm text-ink focus:border-accent"
-        />
-        <button
-          onClick={() => runAdditionalAnalysis(false)}
-          disabled={busy}
-          className="mt-2 rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-sm text-ink transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:border-accent hover:text-accent disabled:opacity-50"
-        >
-          {busy ? "Analyzing…" : "Analyze additional publications"}
-        </button>
-      </div>
-
-      {review && (
-        <div className="flex items-center gap-3 border-t border-rule pt-4">
-          <Link
-            href={`/researchers/${researcherId}/outreach`}
-            className="rounded-[var(--radius-input)] bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90"
+      {sections.papers && (
+        <div>
+          <h3 className="mb-2 text-sm font-semibold text-ink">Add publications to the analysis</h3>
+          <p className="mb-2 text-xs text-muted">
+            Up to 10 titles, one per line. The analysis will be appended to the existing review.
+          </p>
+          <textarea
+            value={titlesInput}
+            onChange={(e) => setTitlesInput(e.target.value)}
+            rows={3}
+            placeholder="One publication title per line"
+            className="w-full rounded-[var(--radius-input)] border border-rule bg-paper p-2 text-sm text-ink focus:border-accent"
+          />
+          <button
+            onClick={() => runAdditionalAnalysis(false)}
+            disabled={busy}
+            className="mt-2 rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-sm text-ink transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:border-accent hover:text-accent disabled:opacity-50"
           >
-            Continue to outreach &rarr;
-          </Link>
-          <Link
-            href="/researchers"
-            className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-4 py-2 text-sm text-ink transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:border-accent hover:text-accent"
-          >
-            Back to researchers list
-          </Link>
+            {busy ? "Analyzing…" : "Analyze additional publications"}
+          </button>
         </div>
       )}
     </div>
