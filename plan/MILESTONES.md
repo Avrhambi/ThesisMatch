@@ -31,7 +31,7 @@
 - [x] Run `npm run verify`
 
 ## Milestone 6 — Outreach and completion
-- [ ] Read `SPEC.md`, `SCHEMA.md`, and `QA.md`; implement researcher-specific notes, redacted-CV outreach generation, unsupported-claim exclusion, copy, and sent tracking.
-- [ ] Complete researcher detail evidence views, contradictions, missing-data indicators, contact timeline, and all defined user-visible states.
-- [ ] Add unit tests for counted actions, extra confirmation, evidence enforcement, access-level claim restrictions, and contact status transitions.
-- [ ] Run `npm run verify`
+- [x] Read `SPEC.md`, `SCHEMA.md`, and `QA.md`; implement researcher-specific notes, redacted-CV outreach generation, unsupported-claim exclusion, copy, and sent tracking.
+- [x] Complete researcher detail evidence views, contradictions, missing-data indicators, contact timeline, and all defined user-visible states.
+- [x] Add unit tests for counted actions, extra confirmation, evidence enforcement, access-level claim restrictions, and contact status transitions.
+- [x] Run `npm run verify`
