@@ -11,8 +11,10 @@ export default async function OutreachPage({ params }: { params: Promise<{ id: s
   if (!researcher) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl p-8" dir="rtl">
-      <h1 className="mb-2 text-xl font-semibold">פנייה — {researcher.fullName}</h1>
+    <main className="mx-auto max-w-3xl px-6 py-8">
+      <h1 className="mb-4 font-display text-2xl font-semibold text-ink">
+        Outreach — {researcher.fullName}
+      </h1>
 
       <OutreachPanel researcherId={researcher.id} />
     </main>

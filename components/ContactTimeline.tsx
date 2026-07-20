@@ -38,13 +38,15 @@ export default function ContactTimeline({ researcherId }: { researcherId: string
   if (state.events.length === 0) return null;
 
   return (
-    <div className="rounded border border-gray-200 p-3 text-sm" dir="rtl">
-      <p className="mb-2 font-medium">ציר זמן קשר</p>
+    <div className="rounded-[var(--radius-card)] border border-rule bg-paper p-4 text-sm">
+      <p className="mb-2 font-medium text-ink">Contact timeline</p>
       <ul className="space-y-1">
         {state.events.map((event) => (
-          <li key={event.id} className="flex items-center gap-2 text-xs text-gray-600">
-            <span>{new Date(event.occurredAt).toLocaleString("he-IL")}</span>
-            <span className="rounded bg-blue-50 px-1.5 py-0.5 text-blue-700">{CONTACT_EVENT_LABELS[event.eventType]}</span>
+          <li key={event.id} className="flex items-center gap-2 text-xs text-muted">
+            <span className="font-mono">{new Date(event.occurredAt).toLocaleString("en-US")}</span>
+            <span className="rounded-[var(--radius-pill)] bg-paper-2 px-2 py-0.5 text-accent">
+              {CONTACT_EVENT_LABELS[event.eventType]}
+            </span>
             {event.note && <span>{event.note}</span>}
           </li>
         ))}

@@ -38,12 +38,12 @@ export default function ProfilePanel({
       });
       const data = await res.json();
       if (!res.ok) {
-        setProfileError(data.error ?? "השמירה נכשלה");
+        setProfileError(data.error ?? "Failed to save");
         return;
       }
-      setProfileSavedAt(new Date().toLocaleTimeString("he-IL"));
+      setProfileSavedAt(new Date().toLocaleTimeString("en-US"));
     } catch {
-      setProfileError("השמירה נכשלה");
+      setProfileError("Failed to save");
     } finally {
       setProfileSaving(false);
     }
@@ -61,59 +61,59 @@ export default function ProfilePanel({
       const res = await fetch("/api/cv", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) {
-        setCvError(data.error ?? "העלאת הקובץ נכשלה");
+        setCvError(data.error ?? "Failed to upload the file");
         return;
       }
       setCurrentCv(data.cv);
     } catch {
-      setCvError("העלאת הקובץ נכשלה");
+      setCvError("Failed to upload the file");
     } finally {
       setCvUploading(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-xl rounded-lg bg-white p-6 shadow-lg" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
+      <div className="w-full max-w-xl rounded-[var(--radius-card)] border border-rule bg-paper p-6 shadow-lg">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">פרופיל וקורות חיים</h2>
-          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-800">
-            סגירה
+          <h2 className="font-display text-lg font-semibold text-ink">Profile &amp; CV</h2>
+          <button onClick={onClose} className="text-sm text-muted hover:text-accent">
+            Close
           </button>
         </div>
 
         <div className="space-y-6">
           <section>
-            <label className="mb-1 block text-sm font-medium">פרופיל מחקרי</label>
+            <label className="mb-1 block text-sm font-medium text-ink">Research profile</label>
             <textarea
               value={profileText}
               onChange={(e) => setProfileText(e.target.value)}
               rows={8}
-              className="w-full rounded border border-gray-300 p-2 text-sm"
-              placeholder="תארו את תחומי המחקר, המיומנויות והכיוונים המבוקשים (100–20,000 תווים)"
+              className="w-full rounded-[var(--radius-input)] border border-rule bg-paper p-2 text-sm text-ink focus:border-accent"
+              placeholder="Describe your research areas, skills, and preferred directions (100–20,000 characters)"
             />
-            <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
-              <span>{profileText.trim().length} תווים</span>
-              {profileSavedAt && <span>נשמר בשעה {profileSavedAt}</span>}
+            <div className="mt-1 flex items-center justify-between text-xs text-muted">
+              <span className="font-mono">{profileText.trim().length} characters</span>
+              {profileSavedAt && <span>Saved at {profileSavedAt}</span>}
             </div>
-            {profileError && <p className="mt-1 text-sm text-red-600">{profileError}</p>}
+            {profileError && <p className="mt-1 text-sm text-danger">{profileError}</p>}
             <button
               onClick={saveProfile}
               disabled={profileSaving}
-              className="mt-2 rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-500 disabled:opacity-50"
+              className="mt-2 rounded-[var(--radius-input)] bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
             >
-              {profileSaving ? "שומר..." : "שמירת פרופיל"}
+              {profileSaving ? "Saving…" : "Save profile"}
             </button>
           </section>
 
           <section>
-            <label className="mb-1 block text-sm font-medium">קורות חיים (PDF, עד 5MB, עד 20 עמודים)</label>
+            <label className="mb-1 block text-sm font-medium text-ink">CV (PDF, up to 5MB, up to 20 pages)</label>
             {currentCv ? (
-              <p className="text-sm text-gray-700">
-                קובץ נוכחי: {currentCv.filename} ({currentCv.pageCount} עמודים)
+              <p className="text-sm text-ink">
+                Current file: {currentCv.filename} ({currentCv.pageCount} pages)
               </p>
             ) : (
-              <p className="text-sm text-gray-500">לא הועלה קובץ קורות חיים</p>
+              <p className="text-sm text-muted">No CV uploaded</p>
             )}
             <input
               type="file"
@@ -122,8 +122,8 @@ export default function ProfilePanel({
               onChange={(e) => uploadCv(e.target.files)}
               className="mt-2 text-sm"
             />
-            {cvUploading && <p className="mt-1 text-sm text-gray-500">מעלה ומחלץ טקסט...</p>}
-            {cvError && <p className="mt-1 text-sm text-red-600">{cvError}</p>}
+            {cvUploading && <p className="mt-1 text-sm text-muted">Uploading and extracting text&hellip;</p>}
+            {cvError && <p className="mt-1 text-sm text-danger">{cvError}</p>}
           </section>
         </div>
       </div>

@@ -75,13 +75,13 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       }
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        setState({ kind: "error", message: body?.error ?? "הניתוח נכשל" });
+        setState({ kind: "error", message: body?.error ?? "Analysis failed" });
         return;
       }
       const analysis: AnalysisResponse = await res.json();
       setState({ kind: "result", analysis });
     } catch {
-      setState({ kind: "error", message: "הניתוח נכשל" });
+      setState({ kind: "error", message: "Analysis failed" });
     } finally {
       setBusy(false);
     }
@@ -110,7 +110,7 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       }
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        setState({ kind: "error", message: body?.error ?? "הניתוח נכשל" });
+        setState({ kind: "error", message: body?.error ?? "Analysis failed" });
         return;
       }
       const body: { analysis: AnalysisResponse | null } = await res.json();
@@ -119,27 +119,34 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
         setTitlesInput("");
       }
     } catch {
-      setState({ kind: "error", message: "הניתוח נכשל" });
+      setState({ kind: "error", message: "Analysis failed" });
     } finally {
       setBusy(false);
     }
   }
 
   if (state.kind === "loading") {
-    return <p className="text-sm text-gray-500">טוען ניתוח...</p>;
+    return <p className="text-sm text-muted">Loading analysis&hellip;</p>;
   }
 
   if (state.kind === "confirm_extra") {
     const confirm = () => (state.action === "deep" ? runDeepAnalysis(true) : runAdditionalAnalysis(true));
     return (
-      <div className="rounded border border-amber-300 bg-amber-50 p-4 text-sm" dir="rtl">
-        <p className="mb-2">חרגת ממכסת חמשת הניתוחים היומית. להמשיך בניתוח נוסף?</p>
+      <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg p-4 text-sm text-ink">
+        <p className="mb-2">You&rsquo;ve exceeded the daily quota of five analyses. Continue with another analysis?</p>
         <div className="flex gap-2">
-          <button onClick={confirm} disabled={busy} className="rounded bg-amber-600 px-3 py-1 text-white hover:bg-amber-500 disabled:opacity-50">
-            אישור וביצוע
+          <button
+            onClick={confirm}
+            disabled={busy}
+            className="rounded-[var(--radius-input)] bg-warning px-3 py-1.5 text-white transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
+          >
+            Confirm &amp; run
           </button>
-          <button onClick={() => setState({ kind: "empty" })} className="rounded bg-gray-100 px-3 py-1 hover:bg-gray-200">
-            ביטול
+          <button
+            onClick={() => setState({ kind: "empty" })}
+            className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-ink hover:border-accent"
+          >
+            Cancel
           </button>
         </div>
       </div>
@@ -148,10 +155,10 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
 
   if (state.kind === "error") {
     return (
-      <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700" dir="rtl">
+      <div className="rounded-[var(--radius-card)] border border-danger/30 bg-danger-bg p-4 text-sm text-danger">
         <p className="mb-2">{state.message}</p>
-        <button onClick={() => runDeepAnalysis(false)} disabled={busy} className="underline">
-          ניסיון נוסף
+        <button onClick={() => runDeepAnalysis(false)} disabled={busy} className="underline underline-offset-2">
+          Try again
         </button>
       </div>
     );
@@ -159,10 +166,14 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
 
   if (state.kind === "empty") {
     return (
-      <div className="rounded border border-dashed border-gray-300 p-8 text-center text-gray-600" dir="rtl">
+      <div className="rounded-[var(--radius-card)] border border-dashed border-rule p-8 text-center text-ink">
         <p className="mb-3">{ANALYSIS_STATE_LABELS.not_analyzed}</p>
-        <button onClick={() => runDeepAnalysis(false)} disabled={busy} className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500 disabled:opacity-50">
-          {busy ? "מבצע ניתוח..." : "ניתוח"}
+        <button
+          onClick={() => runDeepAnalysis(false)}
+          disabled={busy}
+          className="rounded-[var(--radius-input)] bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
+        >
+          {busy ? "Analyzing…" : "Analyze"}
         </button>
       </div>
     );
@@ -173,24 +184,32 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
   const allPapers = review ? [...review.papers, ...additionalPapers] : additionalPapers;
 
   return (
-    <div className="space-y-4" dir="rtl">
+    <div className="space-y-4 rounded-[var(--radius-card)] border border-rule bg-paper p-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{ANALYSIS_STATE_LABELS[analysis.state as AnalysisState]}</span>
+        <span className="text-sm font-medium text-ink">{ANALYSIS_STATE_LABELS[analysis.state as AnalysisState]}</span>
         {analysis.state === "failed" && (
-          <button onClick={() => runDeepAnalysis(false)} disabled={busy} className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-500 disabled:opacity-50">
-            ניסיון נוסף
+          <button
+            onClick={() => runDeepAnalysis(false)}
+            disabled={busy}
+            className="rounded-[var(--radius-input)] bg-accent px-3 py-1.5 text-sm text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
+          >
+            Try again
           </button>
         )}
       </div>
 
       {review && (
-        <div className="space-y-3 rounded border border-gray-200 p-4 text-sm">
+        <div className="space-y-3 rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
           <p>{review.summary}</p>
-          <p className="text-xs text-gray-600">התאמה כללית: {MATCH_LEVEL_LABELS[review.fit as keyof typeof MATCH_LEVEL_LABELS] ?? review.fit}</p>
-          {review.topics.length > 0 && <p className="text-xs text-gray-600">נושאים חוזרים: {review.topics.join(", ")}</p>}
+          <p className="text-xs text-muted">
+            Overall fit: {MATCH_LEVEL_LABELS[review.fit as keyof typeof MATCH_LEVEL_LABELS] ?? review.fit}
+          </p>
+          {review.topics.length > 0 && (
+            <p className="text-xs text-muted">Recurring topics: {review.topics.join(", ")}</p>
+          )}
           {review.thesisDirections.length > 0 && (
             <div>
-              <p className="font-medium">כיווני תזה אפשריים</p>
+              <p className="font-medium">Possible thesis directions</p>
               <ul className="list-inside list-disc">
                 {review.thesisDirections.map((d, i) => (
                   <li key={i}>{d}</li>
@@ -202,15 +221,15 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       )}
 
       {allPapers.length > 0 && (
-        <div className="rounded border border-gray-200 p-4 text-sm">
-          <p className="mb-2 font-medium">סקירת פרסומים</p>
+        <div className="rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
+          <p className="mb-2 font-medium">Publication review</p>
           <ul className="space-y-2">
             {allPapers.map((paper) => (
-              <li key={paper.paperId} className="rounded border border-gray-100 p-2">
-                {paper.question && <p>שאלת מחקר: {paper.question}</p>}
-                {paper.method && <p>שיטה: {paper.method}</p>}
-                {paper.results && <p>תוצאות: {paper.results}</p>}
-                <p className="text-xs text-gray-500">מקורות: {paper.evidence.length}</p>
+              <li key={paper.paperId} className="rounded-[var(--radius-card)] border border-rule p-2">
+                {paper.question && <p>Research question: {paper.question}</p>}
+                {paper.method && <p>Method: {paper.method}</p>}
+                {paper.results && <p>Results: {paper.results}</p>}
+                <p className="text-xs text-muted">Sources: {paper.evidence.length}</p>
               </li>
             ))}
           </ul>
@@ -218,21 +237,23 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       )}
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold">הוספת פרסומים לניתוח</h3>
-        <p className="mb-2 text-xs text-gray-500">עד 10 כותרות, שורה לכל כותרת. הניתוח יתווסף לסקירה הקיימת.</p>
+        <h3 className="mb-2 text-sm font-semibold text-ink">Add publications to the analysis</h3>
+        <p className="mb-2 text-xs text-muted">
+          Up to 10 titles, one per line. The analysis will be appended to the existing review.
+        </p>
         <textarea
           value={titlesInput}
           onChange={(e) => setTitlesInput(e.target.value)}
           rows={3}
-          placeholder="כותרת פרסום אחת בכל שורה"
-          className="w-full rounded border border-gray-300 p-2 text-sm"
+          placeholder="One publication title per line"
+          className="w-full rounded-[var(--radius-input)] border border-rule bg-paper p-2 text-sm text-ink focus:border-accent"
         />
         <button
           onClick={() => runAdditionalAnalysis(false)}
           disabled={busy}
-          className="mt-2 rounded bg-gray-800 px-3 py-1 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
+          className="mt-2 rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-sm text-ink transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:border-accent hover:text-accent disabled:opacity-50"
         >
-          {busy ? "מנתח..." : "ניתוח פרסומים נוספים"}
+          {busy ? "Analyzing…" : "Analyze additional publications"}
         </button>
       </div>
     </div>

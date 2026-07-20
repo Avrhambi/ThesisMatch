@@ -23,7 +23,7 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [sentDecision, setSentDecision] = useState<DecisionStatus>("waiting_for_reply");
-  const [copyLabel, setCopyLabel] = useState("העתקת המייל");
+  const [copyLabel, setCopyLabel] = useState("Copy email");
   const [pendingRegenerate, setPendingRegenerate] = useState(false);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
           setState({ kind: "empty" });
         }
       })
-      .catch(() => setState({ kind: "error", message: "טעינת הפנייה נכשלה" }));
+      .catch(() => setState({ kind: "error", message: "Failed to load outreach" }));
   }, [researcherId]);
 
   async function generate(confirmExtra: boolean, regenerate: boolean) {
@@ -57,13 +57,13 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
       }
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        setState({ kind: "error", message: body?.error ?? "יצירת הפנייה נכשלה" });
+        setState({ kind: "error", message: body?.error ?? "Failed to generate outreach" });
         return;
       }
       const data: { analysis: AnalysisResponse; copiedAt: string | null; sentAt: string | null } = await res.json();
       setState({ kind: "result", analysis: data.analysis, copiedAt: data.copiedAt, sentAt: data.sentAt });
     } catch {
-      setState({ kind: "error", message: "יצירת הפנייה נכשלה" });
+      setState({ kind: "error", message: "Failed to generate outreach" });
     } finally {
       setBusy(false);
     }
@@ -72,8 +72,8 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
   async function copyEmail(body: string) {
     try {
       await navigator.clipboard.writeText(body);
-      setCopyLabel("הועתק!");
-      setTimeout(() => setCopyLabel("העתקת המייל"), 2000);
+      setCopyLabel("Copied!");
+      setTimeout(() => setCopyLabel("Copy email"), 2000);
     } catch {
       /* clipboard unavailable */
     }
@@ -96,34 +96,41 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
     if (state.kind === "result") setState({ ...state, copiedAt: data.copiedAt, sentAt: data.sentAt });
   }
 
-  if (state.kind === "loading") return <p className="text-sm text-gray-500">טוען פנייה...</p>;
+  if (state.kind === "loading") return <p className="text-sm text-muted">Loading outreach&hellip;</p>;
 
   const noteInput = (
     <div>
-      <label className="mb-1 block text-sm font-medium">ידע ספציפי על החוקר</label>
+      <label className="mb-1 block text-sm font-medium text-ink">Specific knowledge about the researcher</label>
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={4}
-        placeholder="שתפו מידע רלוונטי על החוקר (1–10,000 תווים)"
-        className="w-full rounded border border-gray-300 p-2 text-sm"
+        placeholder="Share relevant information about the researcher (1–10,000 characters)"
+        className="w-full rounded-[var(--radius-input)] border border-rule bg-paper p-2 text-sm text-ink focus:border-accent"
       />
-      <p className="mt-1 text-xs text-gray-500">{note.trim().length} תווים</p>
+      <p className="mt-1 font-mono text-xs text-muted">{note.trim().length} characters</p>
     </div>
   );
 
   if (state.kind === "confirm_extra") {
     return (
-      <div className="space-y-3" dir="rtl">
+      <div className="space-y-3">
         {noteInput}
-        <div className="rounded border border-amber-300 bg-amber-50 p-4 text-sm">
-          <p className="mb-2">חרגת ממכסת חמשת הניתוחים היומית. להמשיך ביצירת פנייה נוספת?</p>
+        <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg p-4 text-sm">
+          <p className="mb-2 text-ink">You&rsquo;ve exceeded the daily quota of five analyses. Continue generating another outreach?</p>
           <div className="flex gap-2">
-            <button onClick={() => generate(true, pendingRegenerate)} disabled={busy} className="rounded bg-amber-600 px-3 py-1 text-white hover:bg-amber-500 disabled:opacity-50">
-              אישור וביצוע
+            <button
+              onClick={() => generate(true, pendingRegenerate)}
+              disabled={busy}
+              className="rounded-[var(--radius-input)] bg-warning px-3 py-1.5 text-white transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
+            >
+              Confirm &amp; run
             </button>
-            <button onClick={() => setState({ kind: "empty" })} className="rounded bg-gray-100 px-3 py-1 hover:bg-gray-200">
-              ביטול
+            <button
+              onClick={() => setState({ kind: "empty" })}
+              className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-ink hover:border-accent"
+            >
+              Cancel
             </button>
           </div>
         </div>
@@ -133,12 +140,12 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
 
   if (state.kind === "error") {
     return (
-      <div className="space-y-3" dir="rtl">
+      <div className="space-y-3">
         {noteInput}
-        <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-[var(--radius-card)] border border-danger/30 bg-danger-bg p-4 text-sm text-danger">
           <p className="mb-2">{state.message}</p>
-          <button onClick={() => generate(false, false)} disabled={busy} className="underline">
-            ניסיון נוסף
+          <button onClick={() => generate(false, false)} disabled={busy} className="underline underline-offset-2">
+            Try again
           </button>
         </div>
       </div>
@@ -147,14 +154,14 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
 
   if (state.kind === "empty") {
     return (
-      <div className="space-y-3" dir="rtl">
+      <div className="space-y-3">
         {noteInput}
         <button
           onClick={() => generate(false, false)}
           disabled={busy || note.trim().length === 0}
-          className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500 disabled:opacity-50"
+          className="rounded-[var(--radius-input)] bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
         >
-          {busy ? "יוצר פנייה..." : "יצירת פנייה"}
+          {busy ? "Generating…" : "Generate outreach"}
         </button>
       </div>
     );
@@ -164,41 +171,52 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
   const result = analysis.result as OutreachResult | null;
 
   return (
-    <div className="space-y-4" dir="rtl">
+    <div className="space-y-4">
       {noteInput}
 
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{ANALYSIS_STATE_LABELS[analysis.state as AnalysisState]}</span>
+        <span className="text-sm font-medium text-ink">{ANALYSIS_STATE_LABELS[analysis.state as AnalysisState]}</span>
         <div className="flex gap-2">
-          <button onClick={() => generate(false, true)} disabled={busy || note.trim().length === 0} className="rounded bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200 disabled:opacity-50">
-            {busy ? "מעבד..." : "יצירה מחדש"}
+          <button
+            onClick={() => generate(false, true)}
+            disabled={busy || note.trim().length === 0}
+            className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-sm text-ink transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:border-accent disabled:opacity-50"
+          >
+            {busy ? "Working…" : "Regenerate"}
           </button>
           {analysis.state === "failed" && (
-            <button onClick={() => generate(false, false)} disabled={busy} className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-500 disabled:opacity-50">
-              ניסיון נוסף
+            <button
+              onClick={() => generate(false, false)}
+              disabled={busy}
+              className="rounded-[var(--radius-input)] bg-accent px-3 py-1.5 text-sm text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
+            >
+              Try again
             </button>
           )}
         </div>
       </div>
 
       {result && (
-        <div className="space-y-3 rounded border border-gray-200 p-4 text-sm">
+        <div className="space-y-3 rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
           <p className="font-medium">{result.subject}</p>
-          <p className="whitespace-pre-wrap" dir="ltr">
-            {result.body}
-          </p>
+          <p className="whitespace-pre-wrap">{result.body}</p>
           <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => copyEmail(result.body)} className="rounded bg-gray-800 px-3 py-1 text-xs text-white hover:bg-gray-700">
+            <button
+              onClick={() => copyEmail(result.body)}
+              className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-xs text-ink transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:border-accent"
+            >
               {copyLabel}
             </button>
-            {copiedAt && <span className="text-xs text-gray-500">הועתק בתאריך {new Date(copiedAt).toLocaleString("he-IL")}</span>}
+            {copiedAt && (
+              <span className="text-xs text-muted">Copied on {new Date(copiedAt).toLocaleString("en-US")}</span>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
+          <div className="flex flex-wrap items-center gap-2 border-t border-rule pt-3">
             <select
               value={sentDecision}
               onChange={(e) => setSentDecision(e.target.value as DecisionStatus)}
-              className="rounded border border-gray-300 px-1 py-0.5 text-xs"
+              className="rounded-[var(--radius-input)] border border-rule bg-paper px-1.5 py-0.5 text-xs"
             >
               {(Object.keys(DECISION_LABELS) as DecisionStatus[]).map((d) => (
                 <option key={d} value={d}>
@@ -206,24 +224,27 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
                 </option>
               ))}
             </select>
-            <button onClick={markSent} className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-500">
-              סימון כנשלח
+            <button
+              onClick={markSent}
+              className="rounded-[var(--radius-input)] bg-accent px-3 py-1.5 text-xs text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90"
+            >
+              Mark as sent
             </button>
-            {sentAt && <span className="text-xs text-gray-500">נשלח בתאריך {new Date(sentAt).toLocaleString("he-IL")}</span>}
+            {sentAt && <span className="text-xs text-muted">Sent on {new Date(sentAt).toLocaleString("en-US")}</span>}
           </div>
 
           {result.cvRecommendations.length > 0 && (
             <div>
-              <p className="mb-2 font-medium">המלצות לקורות חיים</p>
+              <p className="mb-2 font-medium">CV recommendations</p>
               <ul className="space-y-2">
                 {result.cvRecommendations.map((rec: CvRecommendation, i: number) => (
-                  <li key={i} className="rounded border border-gray-100 p-2">
-                    <p className="text-xs font-medium text-blue-700">
+                  <li key={i} className="rounded-[var(--radius-card)] border border-rule p-2">
+                    <p className="text-xs font-medium text-accent">
                       {CV_RECOMMENDATION_TYPE_LABELS[rec.type]} · {rec.section}
                     </p>
                     {rec.suggestedText && <p className="mt-1">{rec.suggestedText}</p>}
-                    <p className="mt-1 text-xs text-gray-600">{rec.reason}</p>
-                    <p className="mt-1 text-xs text-gray-400">מקורות: {rec.evidenceIds.length}</p>
+                    <p className="mt-1 text-xs text-muted">{rec.reason}</p>
+                    <p className="mt-1 text-xs text-muted">Sources: {rec.evidenceIds.length}</p>
                   </li>
                 ))}
               </ul>
@@ -232,8 +253,8 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
 
           {result.excludedClaims.length > 0 && (
             <div>
-              <p className="mb-2 font-medium text-amber-700">טענות שהוצאו בשל חוסר בראיות</p>
-              <ul className="list-inside list-disc text-xs text-amber-800">
+              <p className="mb-2 font-medium text-warning">Claims excluded for lack of evidence</p>
+              <ul className="list-inside list-disc text-xs text-warning">
                 {result.excludedClaims.map((claim: ExcludedClaim, i: number) => (
                   <li key={i}>
                     {claim.claim} — {claim.reason}

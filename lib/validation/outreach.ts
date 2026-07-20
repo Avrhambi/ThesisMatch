@@ -4,8 +4,8 @@ import { decisionStatusSchema } from "./researcher";
 export const researcherNoteContentSchema = z
   .string()
   .trim()
-  .min(1, "יש להזין תוכן")
-  .max(10000, "עד 10,000 תווים");
+  .min(1, "Content is required")
+  .max(10000, "Up to 10,000 characters");
 
 export const generateOutreachRequestSchema = z.object({
   note: researcherNoteContentSchema,

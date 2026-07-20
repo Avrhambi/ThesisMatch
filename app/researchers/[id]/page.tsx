@@ -22,28 +22,33 @@ export default async function ResearcherDetailPage({
   const papers = await listPapersForResearcher(id).catch(() => []);
 
   return (
-    <main className="mx-auto max-w-3xl p-8" dir="rtl">
-      <h1 className="mb-2 text-xl font-semibold">{researcher.fullName}</h1>
-      <p className="mb-6 text-sm text-gray-500">
-        <a href={researcher.crisUrl} target="_blank" rel="noreferrer" className="hover:underline">
-          עמוד CRIS
+    <main className="mx-auto max-w-3xl px-6 py-8">
+      <h1 className="font-display text-2xl font-semibold text-ink">{researcher.fullName}</h1>
+      <p className="mb-6 mt-1 text-sm text-muted">
+        <a
+          href={researcher.crisUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="underline decoration-rule underline-offset-4 hover:decoration-accent hover:text-accent"
+        >
+          CRIS page
         </a>
       </p>
 
-      <AnalysisPanel researcherId={researcher.id} />
+      <div className="space-y-4">
+        <AnalysisPanel researcherId={researcher.id} />
 
-      <PapersPanel researcherId={researcher.id} initialPapers={papers} />
+        <PapersPanel researcherId={researcher.id} initialPapers={papers} />
 
-      <div className="mt-4 space-y-4">
         <EvidencePanel researcherId={researcher.id} />
         <ContactTimeline researcherId={researcher.id} />
       </div>
 
       <Link
         href={`/researchers/${researcher.id}/outreach`}
-        className="mt-4 inline-block text-sm text-blue-600 hover:underline"
+        className="mt-6 inline-block text-sm text-accent underline decoration-accent/40 underline-offset-4 hover:decoration-accent"
       >
-        מעבר למסך פנייה
+        Go to outreach screen
       </Link>
     </main>
   );
