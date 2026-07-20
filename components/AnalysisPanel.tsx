@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ANALYSIS_STATE_LABELS, MATCH_LEVEL_LABELS, analysisErrorMessage } from "../lib/labels";
 import type { AnalysisResponse, AnalysisState } from "../lib/types";
 
@@ -47,6 +48,8 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
   const [additionalPapers, setAdditionalPapers] = useState<PaperReview[]>([]);
   const [titlesInput, setTitlesInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const searchParams = useSearchParams();
+  const autoAnalyzeTriggered = useRef(false);
 
   useEffect(() => {
     Promise.all([
@@ -87,6 +90,18 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       setBusy(false);
     }
   }
+
+  // "Ask for another review" on the Researchers screen links here with
+  // ?autoAnalyze=1 so the same Analyze flow (including quota confirmation)
+  // runs immediately instead of requiring an extra click.
+  useEffect(() => {
+    if (state.kind !== "empty") return;
+    if (searchParams.get("autoAnalyze") !== "1") return;
+    if (autoAnalyzeTriggered.current) return;
+    autoAnalyzeTriggered.current = true;
+    runDeepAnalysis(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.kind, searchParams]);
 
   // additional_papers_analysis produces only { papers: [...] }, appended to
   // the existing deep-analysis review (SPEC Flow 2) — it never replaces the
