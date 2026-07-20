@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getResearcherById } from "../../../lib/repositories/researchers";
+import { listPapersForResearcher } from "../../../lib/repositories/papers";
+import PapersPanel from "../../../components/PapersPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +16,8 @@ export default async function ResearcherDetailPage({
   const researcher = await getResearcherById(id).catch(() => null);
   if (!researcher) notFound();
 
+  const papers = await listPapersForResearcher(id).catch(() => []);
+
   return (
     <main className="mx-auto max-w-3xl p-8" dir="rtl">
       <h1 className="mb-2 text-xl font-semibold">{researcher.fullName}</h1>
@@ -26,6 +30,8 @@ export default async function ResearcherDetailPage({
       <div className="rounded border border-dashed border-gray-300 p-8 text-center text-gray-600">
         <p>טרם בוצע ניתוח עבור חוקר זה.</p>
       </div>
+
+      <PapersPanel researcherId={researcher.id} initialPapers={papers} />
 
       <Link
         href={`/researchers/${researcher.id}/outreach`}
