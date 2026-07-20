@@ -256,6 +256,18 @@ export async function listResearchers(
   };
 }
 
+// Powers the decisions dashboard's stat tiles: how many researchers sit at
+// each personal status right now, across the whole set (not paginated,
+// unlike listResearchers).
+export async function countResearchersByDecision(): Promise<Record<DecisionStatus, number>> {
+  const { rows } = await query<{ decision: DecisionStatus; count: string }>(
+    "SELECT decision, count(*)::text AS count FROM researchers GROUP BY decision",
+  );
+  const counts = {} as Record<DecisionStatus, number>;
+  for (const row of rows) counts[row.decision] = Number(row.count);
+  return counts;
+}
+
 export interface UpdateResearcherFields {
   decision?: DecisionStatus;
   personalNote?: string | null;
