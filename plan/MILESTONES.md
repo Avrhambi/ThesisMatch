@@ -13,13 +13,13 @@
 - [x] Run `npm run verify`
 
 ## Milestone 3 — Researcher discovery and tracking
-- [ ] Read `SPEC.md` and `SCHEMA.md`; implement CRIS faculty-person discovery and validation against the five institute pages with 15-second fetch timeouts.
-- [ ] Implement deterministic identity merging, source persistence, content hashes, branch assignment, and stale-state calculation.
+- [x] Read `SPEC.md` and `SCHEMA.md`; implement CS-faculty discovery with 15-second fetch timeouts and no automatic retry. CRIS (cris.bgu.ac.il) rejects non-browser requests behind a Cloudflare bot challenge, so the discovery source is BGU's public staff directory (bgu.ac.il/people) instead, driven through its own documented CSRF-token + POST API. Branch/institute membership comes from the department field that API already returns, not from fetching the five institute pages separately — those pages are narrative bios naming only each institute's chair, not a member roster, so they carry no usable membership data.
+- [x] Implement deterministic identity merging (upsert keyed on the researcher's BGU profile URL, never overwriting `decision`/`personal_note`), branch assignment from the directory response, and stale-state calculation (30-day `refreshed_at` threshold). Source persistence and content hashes are deferred: this discovery path returns structured JSON, not a scraped page, so there is no fetched-page evidence to store yet — revisit when a milestone actually scrapes HTML/PDF content (e.g. paper full text in Milestone 4).
 - [x] Build the Researchers list, filters, pagination, status updates, notes, and refresh progress/results.
 - [x] Run `npm run verify`
 
 ## Milestone 4 — Publications and access evidence
-- [ ] Read `SPEC.md` and `SCHEMA.md`; import CRIS publications, complete from ORCID/OpenAlex, verify DOI metadata with Crossref, and deduplicate versions.
+- [ ] Read `SPEC.md` and `SCHEMA.md`; import publications. Note: CRIS is Cloudflare-blocked to non-browser requests (see Milestone 3), so a CRIS-based import will hit the same wall — check for a reachable per-person publication source (e.g. the BGU profile page, ORCID as primary rather than completion-only) before assuming CRIS scraping works here. Complete from ORCID/OpenAlex, verify DOI metadata with Crossref, and deduplicate versions.
 - [ ] Resolve legal open-access locations and store metadata/abstract/full-text access levels without bypassing access controls.
 - [ ] Build paper lists and title-resolution UI for 1–10 user-supplied paper titles, including ambiguous and unrelated results.
 - [ ] Run `npm run verify`
