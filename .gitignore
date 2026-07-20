@@ -8,3 +8,7 @@ build
 npm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
+
+# symlink to .agents/skills/hallmark (git on Windows resolves it to real
+# files instead of a symlink entry, duplicating the whole skill)
+.claude/skills
