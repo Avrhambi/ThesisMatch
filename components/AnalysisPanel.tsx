@@ -259,17 +259,19 @@ export default function AnalysisPanel({
         <div className="space-y-4 rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
           {/* Decision comes first: priority, supervision risk, and why -- before the descriptive summary. */}
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`rounded-[var(--radius-pill)] px-2 py-0.5 text-xs font-medium ${
-                review.priority === "high_priority"
-                  ? "bg-success-bg text-success"
-                  : review.priority === "do_not_prioritize"
-                    ? "bg-danger-bg text-danger"
-                    : "bg-paper-2 text-ink"
-              }`}
-            >
-              {PRIORITY_LABELS[review.priority]}
-            </span>
+            {review.priority && (
+              <span
+                className={`rounded-[var(--radius-pill)] px-2 py-0.5 text-xs font-medium ${
+                  review.priority === "high_priority"
+                    ? "bg-success-bg text-success"
+                    : review.priority === "do_not_prioritize"
+                      ? "bg-danger-bg text-danger"
+                      : "bg-paper-2 text-ink"
+                }`}
+              >
+                {PRIORITY_LABELS[review.priority]}
+              </span>
+            )}
             <span className="text-xs text-muted">
               Overall fit: {MATCH_LEVEL_LABELS[review.fit]}
             </span>
@@ -291,13 +293,13 @@ export default function AnalysisPanel({
             {(["topicFit", "methodFit", "mechanismFit", "practicalFit"] as const).map((dim) => (
               <div key={dim} className="rounded-[var(--radius-card)] border border-rule p-2">
                 <p className="text-xs font-medium text-muted">{FIT_DIMENSION_LABELS[dim]}</p>
-                <p className="text-sm">{MATCH_LEVEL_LABELS[review[dim].level]}</p>
-                <p className="mt-1 text-xs text-muted">{review[dim].reasoning}</p>
+                <p className="text-sm">{MATCH_LEVEL_LABELS[review[dim]?.level ?? "unknown"]}</p>
+                {review[dim]?.reasoning && <p className="mt-1 text-xs text-muted">{review[dim].reasoning}</p>}
               </div>
             ))}
           </div>
 
-          {review.disqualifyingFactors.length > 0 && (
+          {(review.disqualifyingFactors?.length ?? 0) > 0 && (
             <div>
               <p className="font-medium text-warning">Disqualifying factors</p>
               <ul className="list-inside list-disc text-warning">
@@ -308,7 +310,7 @@ export default function AnalysisPanel({
             </div>
           )}
 
-          {review.missingEvidence.length > 0 && (
+          {(review.missingEvidence?.length ?? 0) > 0 && (
             <div>
               <p className="font-medium text-muted">Missing evidence</p>
               <ul className="list-inside list-disc text-muted">
