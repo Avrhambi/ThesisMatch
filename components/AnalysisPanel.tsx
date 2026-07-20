@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { ANALYSIS_STATE_LABELS, MATCH_LEVEL_LABELS, analysisErrorMessage } from "../lib/labels";
 import type { AnalysisResponse, AnalysisState } from "../lib/types";
 
@@ -256,6 +257,23 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
           {busy ? "Analyzing…" : "Analyze additional publications"}
         </button>
       </div>
+
+      {review && (
+        <div className="flex items-center gap-3 border-t border-rule pt-4">
+          <Link
+            href={`/researchers/${researcherId}/outreach`}
+            className="rounded-[var(--radius-input)] bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90"
+          >
+            Continue to outreach &rarr;
+          </Link>
+          <Link
+            href="/researchers"
+            className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-4 py-2 text-sm text-ink transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:border-accent hover:text-accent"
+          >
+            Back to researchers list
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

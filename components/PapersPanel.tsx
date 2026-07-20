@@ -14,6 +14,12 @@ export interface PaperRow {
   addedByUser: boolean;
 }
 
+function accessLevelBreakdown(papers: PaperRow[]): [AccessLevel, number][] {
+  const counts = new Map<AccessLevel, number>();
+  for (const paper of papers) counts.set(paper.access, (counts.get(paper.access) ?? 0) + 1);
+  return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+}
+
 type ImportState = { kind: "idle" } | { kind: "running" } | { kind: "done"; result: ImportPublicationsResponse } | { kind: "error" };
 type ResolveState =
   | { kind: "idle" }
@@ -120,25 +126,33 @@ export default function PapersPanel({
           No publications recorded for this researcher yet.
         </p>
       ) : (
-        <ul className="space-y-2">
-          {papers.map((paper) => (
-            <li key={paper.id} className="rounded-[var(--radius-card)] border border-rule p-3 text-sm text-ink">
-              <div className="font-medium">{paper.title}</div>
-              <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted">
-                {paper.publicationYear && <span>{paper.publicationYear}</span>}
-                {paper.venue && <span>{paper.venue}</span>}
-                <span className="rounded-[var(--radius-pill)] bg-paper-2 px-2 py-0.5 text-accent">
-                  {ACCESS_LEVEL_LABELS[paper.access]}
-                </span>
-                {paper.addedByUser && (
-                  <span className="rounded-[var(--radius-pill)] bg-warning-bg px-2 py-0.5 text-warning">
-                    Added manually
+        <details className="rounded-[var(--radius-card)] border border-rule p-3 text-sm">
+          <summary className="cursor-pointer font-medium text-ink">
+            {papers.length} publication{papers.length === 1 ? "" : "s"} ·{" "}
+            {accessLevelBreakdown(papers)
+              .map(([level, count]) => `${count} ${ACCESS_LEVEL_LABELS[level].toLowerCase()}`)
+              .join(" · ")}
+          </summary>
+          <ul className="mt-2 space-y-2">
+            {papers.map((paper) => (
+              <li key={paper.id} className="rounded-[var(--radius-card)] border border-rule p-3 text-sm text-ink">
+                <div className="font-medium">{paper.title}</div>
+                <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted">
+                  {paper.publicationYear && <span>{paper.publicationYear}</span>}
+                  {paper.venue && <span>{paper.venue}</span>}
+                  <span className="rounded-[var(--radius-pill)] bg-paper-2 px-2 py-0.5 text-accent">
+                    {ACCESS_LEVEL_LABELS[paper.access]}
                   </span>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+                  {paper.addedByUser && (
+                    <span className="rounded-[var(--radius-pill)] bg-warning-bg px-2 py-0.5 text-warning">
+                      Added manually
+                    </span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       <div className="mt-6">

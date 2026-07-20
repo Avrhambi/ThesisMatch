@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getResearcherById } from "../../../lib/repositories/researchers";
 import { listPapersForResearcher } from "../../../lib/repositories/papers";
 import PapersPanel from "../../../components/PapersPanel";
@@ -43,13 +42,6 @@ export default async function ResearcherDetailPage({
         <EvidencePanel researcherId={researcher.id} />
         <ContactTimeline researcherId={researcher.id} />
       </div>
-
-      <Link
-        href={`/researchers/${researcher.id}/outreach`}
-        className="mt-6 inline-block text-sm text-accent underline decoration-accent/40 underline-offset-4 hover:decoration-accent"
-      >
-        Go to outreach screen
-      </Link>
     </main>
   );
 }
