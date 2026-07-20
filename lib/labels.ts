@@ -1,4 +1,4 @@
-import type { AccessLevel, DecisionStatus, MatchLevel, ResearchBranch } from "./types";
+import type { AccessLevel, AnalysisState, DecisionStatus, MatchLevel, ResearchBranch } from "./types";
 
 export const BRANCH_LABELS: Record<ResearchBranch, string> = {
   s3: "תוכנה, מערכות ואבטחה (S3)",
@@ -34,4 +34,13 @@ export const ACCESS_LEVEL_LABELS: Record<AccessLevel, string> = {
   full_text_open: "טקסט מלא (גישה פתוחה)",
   user_uploaded_pdf: "PDF שהועלה",
   unavailable: "לא זמין",
+};
+
+export const ANALYSIS_STATE_LABELS: Record<AnalysisState, string> = {
+  not_analyzed: "טרם בוצע ניתוח",
+  pending: "בהמתנה",
+  running: "מתבצע ניתוח...",
+  completed: "ניתוח הושלם",
+  completed_with_gaps: "ניתוח הושלם עם פערי מידע",
+  failed: "הניתוח נכשל",
 };

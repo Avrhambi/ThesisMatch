@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import ProfilePanel, { type CurrentCv } from "./ProfilePanel";
+import UsageIndicator from "./UsageIndicator";
 
 interface ProfileResponse {
   profile: { researchProfileText: string; updatedAt: string } | null;
@@ -50,6 +51,7 @@ export default function Nav() {
             ThesisMatch
           </Link>
           <div className="flex items-center gap-4">
+            <UsageIndicator />
             <Link href="/researchers" className="text-sm hover:underline">
               חוקרים
             </Link>

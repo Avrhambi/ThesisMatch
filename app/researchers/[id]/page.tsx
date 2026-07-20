@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getResearcherById } from "../../../lib/repositories/researchers";
 import { listPapersForResearcher } from "../../../lib/repositories/papers";
 import PapersPanel from "../../../components/PapersPanel";
+import AnalysisPanel from "../../../components/AnalysisPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +28,7 @@ export default async function ResearcherDetailPage({
         </a>
       </p>
 
-      <div className="rounded border border-dashed border-gray-300 p-8 text-center text-gray-600">
-        <p>טרם בוצע ניתוח עבור חוקר זה.</p>
-      </div>
+      <AnalysisPanel researcherId={researcher.id} />
 
       <PapersPanel researcherId={researcher.id} initialPapers={papers} />
 
