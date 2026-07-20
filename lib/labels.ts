@@ -1,4 +1,13 @@
-import type { AccessLevel, AnalysisState, CvRecommendationType, DecisionStatus, MatchLevel, ResearchBranch } from "./types";
+import type {
+  AccessLevel,
+  AnalysisState,
+  CvRecommendationType,
+  DecisionStatus,
+  MatchLevel,
+  Priority,
+  ResearchBranch,
+  SupervisionStatus,
+} from "./types";
 import type { ContactEventType } from "./repositories/contactEvents";
 
 export const BRANCH_LABELS: Record<ResearchBranch, string> = {
@@ -88,3 +97,22 @@ export const SELECTION_REASON_LABELS: Record<string, string> = {
   distinct: "Distinct direction",
   user_added: "Added by you",
 };
+
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  high_priority: "High priority",
+  consider: "Consider",
+  low_priority: "Low priority",
+  do_not_prioritize: "Do not prioritize",
+};
+
+export const SUPERVISION_STATUS_LABELS: Record<SupervisionStatus, string> = {
+  unverified: "Supervision availability unverified",
+  verified_available: "No supervision red flags found",
+};
+
+export const FIT_DIMENSION_LABELS = {
+  topicFit: "Topic fit",
+  methodFit: "Method fit",
+  mechanismFit: "Mechanism fit",
+  practicalFit: "Practical fit",
+} as const;

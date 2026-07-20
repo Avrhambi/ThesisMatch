@@ -4,8 +4,8 @@ import {
   validatePaperReviewsEvidence,
   validateResearcherReviewEvidence,
   type CvRecommendation,
+  type GeminiResearcherReview,
   type PaperReview,
-  type ResearcherReview,
 } from "../../lib/analysis/evidenceValidation";
 
 function makePaperReview(overrides: Partial<PaperReview> = {}): PaperReview {
@@ -65,12 +65,18 @@ describe("validatePaperReviewsEvidence", () => {
 
 describe("validateResearcherReviewEvidence", () => {
   it("sanitizes every paper review inside the researcher review", () => {
-    const review: ResearcherReview = {
+    const review: GeminiResearcherReview = {
       summary: "summary",
       topics: [],
       industryOrientation: "unknown",
       technicalOrientation: "unknown",
-      fit: "medium",
+      topicFit: { level: "medium", reasoning: "test" },
+      methodFit: { level: "medium", reasoning: "test" },
+      mechanismFit: { level: "medium", reasoning: "test" },
+      practicalFit: { level: "medium", reasoning: "test" },
+      recommendationReason: "test",
+      disqualifyingFactors: [],
+      missingEvidence: [],
       matches: [],
       mismatches: [],
       thesisDirections: [],

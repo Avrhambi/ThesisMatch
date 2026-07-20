@@ -6,11 +6,14 @@ import { useSearchParams } from "next/navigation";
 import {
   ACCESS_LEVEL_LABELS,
   ANALYSIS_STATE_LABELS,
+  FIT_DIMENSION_LABELS,
   MATCH_LEVEL_LABELS,
+  PRIORITY_LABELS,
   SELECTION_REASON_LABELS,
+  SUPERVISION_STATUS_LABELS,
   analysisErrorMessage,
 } from "../lib/labels";
-import type { AccessLevel, AnalysisResponse, AnalysisState } from "../lib/types";
+import type { AccessLevel, AnalysisResponse, AnalysisState, FitAssessment, MatchLevel, Priority, SupervisionStatus } from "../lib/types";
 
 interface PaperReview {
   paperId: string;
@@ -34,7 +37,16 @@ interface ResearcherReview {
   topics: string[];
   industryOrientation: string;
   technicalOrientation: string;
-  fit: string;
+  topicFit: FitAssessment;
+  methodFit: FitAssessment;
+  mechanismFit: FitAssessment;
+  practicalFit: FitAssessment;
+  fit: MatchLevel;
+  priority: Priority;
+  supervisionStatus: SupervisionStatus;
+  recommendationReason: string;
+  disqualifyingFactors: string[];
+  missingEvidence: string[];
   matches: string[];
   mismatches: string[];
   thesisDirections: string[];
@@ -227,15 +239,74 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       </div>
 
       {review && (
-        <div className="space-y-3 rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
+        <div className="space-y-4 rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
+          {/* Decision comes first: priority, supervision risk, and why -- before the descriptive summary. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-[var(--radius-pill)] px-2 py-0.5 text-xs font-medium ${
+                review.priority === "high_priority"
+                  ? "bg-success-bg text-success"
+                  : review.priority === "do_not_prioritize"
+                    ? "bg-danger-bg text-danger"
+                    : "bg-paper-2 text-ink"
+              }`}
+            >
+              {PRIORITY_LABELS[review.priority]}
+            </span>
+            <span className="text-xs text-muted">
+              Overall fit: {MATCH_LEVEL_LABELS[review.fit]}
+            </span>
+          </div>
+
+          {review.supervisionStatus === "unverified" && (
+            <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg p-3 text-sm text-warning">
+              <p className="font-medium">{SUPERVISION_STATUS_LABELS.unverified}</p>
+              <p className="mt-1 text-xs">
+                This researcher&rsquo;s listed title suggests Emeritus or retired status. Verify they still supervise
+                M.Sc. students before contacting.
+              </p>
+            </div>
+          )}
+
+          {review.recommendationReason && <p>{review.recommendationReason}</p>}
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {(["topicFit", "methodFit", "mechanismFit", "practicalFit"] as const).map((dim) => (
+              <div key={dim} className="rounded-[var(--radius-card)] border border-rule p-2">
+                <p className="text-xs font-medium text-muted">{FIT_DIMENSION_LABELS[dim]}</p>
+                <p className="text-sm">{MATCH_LEVEL_LABELS[review[dim].level]}</p>
+                <p className="mt-1 text-xs text-muted">{review[dim].reasoning}</p>
+              </div>
+            ))}
+          </div>
+
+          {review.disqualifyingFactors.length > 0 && (
+            <div>
+              <p className="font-medium text-warning">Disqualifying factors</p>
+              <ul className="list-inside list-disc text-warning">
+                {review.disqualifyingFactors.map((factor, i) => (
+                  <li key={i}>{factor}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {review.missingEvidence.length > 0 && (
+            <div>
+              <p className="font-medium text-muted">Missing evidence</p>
+              <ul className="list-inside list-disc text-muted">
+                {review.missingEvidence.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <p>{review.summary}</p>
-          <p className="text-xs text-muted">
-            Overall fit: {MATCH_LEVEL_LABELS[review.fit as keyof typeof MATCH_LEVEL_LABELS] ?? review.fit}
-          </p>
           {review.topics.length > 0 && (
             <p className="text-xs text-muted">Recurring topics: {review.topics.join(", ")}</p>
           )}
-          {review.thesisDirections.length > 0 && (
+          {review.thesisDirections.length > 0 ? (
             <div>
               <p className="font-medium">Possible thesis directions</p>
               <ul className="list-inside list-disc">
@@ -244,6 +315,8 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
                 ))}
               </ul>
             </div>
+          ) : (
+            <p className="text-xs text-muted">No high-confidence thesis direction found for this researcher.</p>
           )}
         </div>
       )}

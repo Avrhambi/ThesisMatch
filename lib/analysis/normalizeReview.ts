@@ -1,4 +1,4 @@
-import type { CvRecommendation, PaperReview, ResearcherReview } from "./evidenceValidation";
+import type { CvRecommendation, GeminiResearcherReview, PaperReview } from "./evidenceValidation";
 
 // The Gemini response schema (lib/gemini/schema.ts) uses "" instead of JSON
 // null for "not stated" fields; this converts back to the null the app's
@@ -29,7 +29,9 @@ export function normalizePaperReview(raw: {
   };
 }
 
-export function normalizeResearcherReview(raw: Omit<ResearcherReview, "papers"> & { papers: Parameters<typeof normalizePaperReview>[0][] }): ResearcherReview {
+export function normalizeResearcherReview(
+  raw: Omit<GeminiResearcherReview, "papers"> & { papers: Parameters<typeof normalizePaperReview>[0][] },
+): GeminiResearcherReview {
   return { ...raw, papers: raw.papers.map(normalizePaperReview) };
 }
 

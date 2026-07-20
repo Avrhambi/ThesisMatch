@@ -1,4 +1,4 @@
-import type { AccessLevel, MatchLevel } from "../types";
+import type { AccessLevel, FitAssessment, MatchLevel, Priority, SupervisionStatus } from "../types";
 
 export interface EvidenceRef {
   sourceId: string;
@@ -17,16 +17,34 @@ export interface PaperReview {
   evidence: EvidenceRef[];
 }
 
-export interface ResearcherReview {
+// What Gemini actually produces, matching RESEARCHER_REVIEW_JSON_SCHEMA.
+export interface GeminiResearcherReview {
   summary: string;
   topics: string[];
   industryOrientation: MatchLevel | "unknown";
   technicalOrientation: "mathematical" | "algorithmic" | "experimental" | "mixed" | "unknown";
-  fit: MatchLevel;
+  topicFit: FitAssessment;
+  methodFit: FitAssessment;
+  mechanismFit: FitAssessment;
+  practicalFit: FitAssessment;
+  recommendationReason: string;
+  disqualifyingFactors: string[];
+  missingEvidence: string[];
   matches: string[];
   mismatches: string[];
   thesisDirections: string[];
   papers: PaperReview[];
+}
+
+// The full stored/displayed shape: Gemini's output plus overallFit/priority/
+// supervisionStatus, which are always derived deterministically in code
+// (see lib/analysis/fitAssessment.ts, lib/analysis/supervisionEligibility.ts)
+// and merged in after evidence validation -- never requested from or trusted
+// to the model.
+export interface ResearcherReview extends GeminiResearcherReview {
+  fit: MatchLevel;
+  priority: Priority;
+  supervisionStatus: SupervisionStatus;
 }
 
 export type ClaimStatus = "verified" | "inferred" | "conflicting" | "missing";
@@ -39,7 +57,7 @@ export interface ClaimToPersist {
 }
 
 export interface EvidenceValidationResult {
-  sanitized: ResearcherReview;
+  sanitized: GeminiResearcherReview;
   claims: ClaimToPersist[];
   hasGaps: boolean;
 }
@@ -89,7 +107,7 @@ export function validatePaperReviewsEvidence(
 }
 
 export function validateResearcherReviewEvidence(
-  review: ResearcherReview,
+  review: GeminiResearcherReview,
   allowedSourceIds: ReadonlySet<string>,
 ): EvidenceValidationResult {
   const { sanitizedPapers, claims, hasGaps } = validatePaperReviewsEvidence(review.papers, allowedSourceIds);

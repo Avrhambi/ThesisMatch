@@ -13,6 +13,16 @@ export type MatchLevel = "unknown" | "low" | "medium" | "high";
 // red flag, since the app has no way to confirm active availability either way.
 export type SupervisionStatus = "unverified" | "verified_available";
 
+export interface FitAssessment {
+  level: MatchLevel;
+  reasoning: string;
+}
+
+// Derived deterministically in code from the four fit dimensions + whether
+// any concrete thesis direction was found -- never trusted directly to the
+// LLM (see lib/analysis/fitAssessment.ts).
+export type Priority = "high_priority" | "consider" | "low_priority" | "do_not_prioritize";
+
 export type AccessLevel =
   | "metadata_only"
   | "abstract"
