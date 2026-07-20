@@ -7,6 +7,26 @@ export type ResearchBranch =
 
 export type MatchLevel = "unknown" | "low" | "medium" | "high";
 
+export type AccessLevel =
+  | "metadata_only"
+  | "abstract"
+  | "full_text_open"
+  | "user_uploaded_pdf"
+  | "unavailable";
+
+export type SourceType =
+  | "bgu"
+  | "cris"
+  | "personal"
+  | "orcid"
+  | "openalex"
+  | "crossref"
+  | "semantic_scholar"
+  | "publisher"
+  | "arxiv"
+  | "repository"
+  | "user_upload";
+
 export type DecisionStatus =
   | "new"
   | "interested"
@@ -40,4 +60,34 @@ export interface RefreshResearchersResponse {
 export interface UpdateResearcherRequest {
   decision?: DecisionStatus;
   personalNote?: string | null;
+}
+
+export type PublicationSourceKind = "orcid" | "openalex_name_match" | "unavailable";
+
+export interface ImportPublicationsResponse {
+  source: PublicationSourceKind;
+  found: number;
+  imported: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+}
+
+export type TitleResolutionStatus = "resolved" | "ambiguous" | "unrelated";
+
+export interface ResolvedTitleResult {
+  title: string;
+  status: TitleResolutionStatus;
+  doi?: string;
+  matchedTitle?: string;
+  candidates?: { doi: string; title: string }[];
+}
+
+export interface ResolveTitlesRequest {
+  titles: string[];
+}
+
+export interface ResolveTitlesResponse {
+  results: ResolvedTitleResult[];
+  imported: number;
 }

@@ -1,4 +1,4 @@
-import type { DecisionStatus, MatchLevel, ResearchBranch } from "./types";
+import type { AccessLevel, DecisionStatus, MatchLevel, ResearchBranch } from "./types";
 
 export const BRANCH_LABELS: Record<ResearchBranch, string> = {
   s3: "תוכנה, מערכות ואבטחה (S3)",
@@ -26,4 +26,12 @@ export const MATCH_LEVEL_LABELS: Record<MatchLevel, string> = {
   low: "נמוכה",
   medium: "בינונית",
   high: "גבוהה",
+};
+
+export const ACCESS_LEVEL_LABELS: Record<AccessLevel, string> = {
+  metadata_only: "מטא-דאטה בלבד",
+  abstract: "תקציר",
+  full_text_open: "טקסט מלא (גישה פתוחה)",
+  user_uploaded_pdf: "PDF שהועלה",
+  unavailable: "לא זמין",
 };
