@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ANALYSIS_STATE_LABELS, MATCH_LEVEL_LABELS } from "../lib/labels";
+import { ANALYSIS_STATE_LABELS, MATCH_LEVEL_LABELS, analysisErrorMessage } from "../lib/labels";
 import type { AnalysisResponse, AnalysisState } from "../lib/types";
 
 interface PaperReview {
@@ -75,7 +75,7 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       }
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        setState({ kind: "error", message: body?.error ?? "Analysis failed" });
+        setState({ kind: "error", message: analysisErrorMessage(body?.error ?? "") });
         return;
       }
       const analysis: AnalysisResponse = await res.json();
@@ -110,7 +110,7 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       }
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        setState({ kind: "error", message: body?.error ?? "Analysis failed" });
+        setState({ kind: "error", message: analysisErrorMessage(body?.error ?? "") });
         return;
       }
       const body: { analysis: AnalysisResponse | null } = await res.json();

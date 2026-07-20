@@ -67,3 +67,17 @@ export const CONTACT_EVENT_LABELS: Record<ContactEventType, string> = {
   meeting_scheduled: "Meeting scheduled",
   closed: "Closed",
 };
+
+export const ANALYSIS_ERROR_LABELS: Record<string, string> = {
+  no_papers:
+    "No publications could be imported automatically for this researcher. Try Import publications above, or add titles manually below.",
+  no_papers_unavailable:
+    "No publications could be found automatically (no ORCID on file, and no confident name match). Add paper titles manually below to analyze this researcher.",
+  researcher_not_found: "Researcher not found.",
+  profile_missing: "Add your research profile under Profile & CV before running an analysis.",
+  already_running: "This analysis is already running. Try again in a moment.",
+};
+
+export function analysisErrorMessage(errorCode: string): string {
+  return ANALYSIS_ERROR_LABELS[errorCode] ?? "Analysis failed. Try again.";
+}

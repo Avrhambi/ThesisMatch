@@ -1,6 +1,7 @@
 import { getResearcherById } from "../repositories/researchers";
 import { getProfile } from "../repositories/profile";
 import { getSelectablePapersForResearcher, getPapersEvidence } from "../repositories/papers";
+import { importPublicationsForResearcher } from "../publications/import";
 import {
   findAnalysisByHash,
   getOrCreatePendingAnalysis,
@@ -39,8 +40,18 @@ export async function runDeepAnalysis(researcherId: string, confirmExtra: boolea
   const profile = await getProfile();
   if (!profile) return { status: "error", errorCode: "profile_missing" };
 
-  const allPapers = await getSelectablePapersForResearcher(researcherId);
-  if (allPapers.length === 0) return { status: "error", errorCode: "no_papers" };
+  let allPapers = await getSelectablePapersForResearcher(researcherId);
+  if (allPapers.length === 0) {
+    // Publication import is otherwise a separate manual step (PapersPanel's
+    // "Import publications" button); run it here so Analyze works on the
+    // first click instead of failing until the user imports first.
+    const importResult = await importPublicationsForResearcher(researcherId);
+    allPapers = await getSelectablePapersForResearcher(researcherId);
+    if (allPapers.length === 0) {
+      const errorCode = importResult.source === "unavailable" ? "no_papers_unavailable" : "no_papers";
+      return { status: "error", errorCode };
+    }
+  }
 
   const selection = selectPapersForAnalysis(profile.researchProfileText, allPapers);
   const paperIds = [...selection.map((s) => s.paperId)].sort();
