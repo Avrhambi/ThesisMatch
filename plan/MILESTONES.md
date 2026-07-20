@@ -25,10 +25,10 @@
 - [x] Run `npm run verify`
 
 ## Milestone 5 — Gemini analyses and daily limits
-- [ ] Read all five build-pack files; implement serialized `gemini-3.1-flash-lite` structured-output calls with evidence-ID validation and prompts in `lib/prompts/`.
-- [ ] Implement automatic five-paper selection, deep analysis, appended additional-paper batches, input hashing, saved failures, and manual retry.
-- [ ] Implement the five-per-day standard allowance, explicit one-request extra confirmation, 8 RPM guard, and usage display.
-- [ ] Run `npm run verify`
+- [x] Read all five build-pack files; implement serialized `gemini-3.1-flash-lite` structured-output calls with evidence-ID validation and prompts in `lib/prompts/`.
+- [x] Implement automatic five-paper selection, deep analysis, appended additional-paper batches, input hashing, saved failures, and manual retry. Shipped as: retry has no separate endpoint — re-submitting the same analyze action with unchanged inputs recomputes the identical `input_hash` and resets the existing `failed` row to `pending` in place (`ON CONFLICT` in `getOrCreatePendingAnalysis`), satisfying "Try again" without a second code path. Not verified against the live Gemini API (no `GEMINI_API_KEY` configured in this environment) — evidence-ID validation, paper selection, hashing, and the daily-usage gate are covered by unit tests instead.
+- [x] Implement the five-per-day standard allowance, explicit one-request extra confirmation, 8 RPM guard, and usage display.
+- [x] Run `npm run verify`
 
 ## Milestone 6 — Outreach and completion
 - [ ] Read `SPEC.md`, `SCHEMA.md`, and `QA.md`; implement researcher-specific notes, redacted-CV outreach generation, unsupported-claim exclusion, copy, and sent tracking.
