@@ -259,7 +259,11 @@ export async function updateResearcher(id: string, updates: UpdateResearcherFiel
   const sets: string[] = [];
   const params: unknown[] = [];
 
+  let priorDecision: DecisionStatus | null = null;
   if (updates.decision !== undefined) {
+    const { rows } = await query<{ decision: DecisionStatus }>("SELECT decision FROM researchers WHERE id = $1", [id]);
+    priorDecision = rows[0]?.decision ?? null;
+
     params.push(updates.decision);
     sets.push(`decision = $${params.length}`);
   }
@@ -271,6 +275,13 @@ export async function updateResearcher(id: string, updates: UpdateResearcherFiel
 
   params.push(id);
   await query(`UPDATE researchers SET ${sets.join(", ")} WHERE id = $${params.length}`, params);
+
+  if (updates.decision !== undefined && updates.decision !== priorDecision) {
+    await query(
+      "INSERT INTO researcher_status_events (id, researcher_id, old_decision, new_decision, changed_at) VALUES ($1, $2, $3, $4, now())",
+      [randomUUID(), id, priorDecision, updates.decision],
+    );
+  }
 
   const eventType = updates.decision ? contactEventTypeForDecision(updates.decision) : null;
   if (eventType) {
