@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { upsertDiscoveredResearcher, type QueryableClient } from "../../lib/repositories/researchers";
+import { contactEventTypeForDecision, upsertDiscoveredResearcher, type QueryableClient } from "../../lib/repositories/researchers";
 
 function createFakeClient(existingRow: Record<string, unknown> | null, existingBranches: string[] = []) {
   const calls: { text: string; params?: unknown[] }[] = [];
@@ -93,5 +93,25 @@ describe("upsertDiscoveredResearcher", () => {
       upsertDiscoveredResearcher({ query } as unknown as QueryableClient, input),
     ).rejects.toThrow("insert failed");
     expect(query).toHaveBeenCalledWith("ROLLBACK");
+  });
+});
+
+describe("contactEventTypeForDecision", () => {
+  it("maps already_contacted to a contacted event", () => {
+    expect(contactEventTypeForDecision("already_contacted")).toBe("contacted");
+  });
+
+  it("maps meeting_scheduled to a meeting_scheduled event", () => {
+    expect(contactEventTypeForDecision("meeting_scheduled")).toBe("meeting_scheduled");
+  });
+
+  it("maps closed to a closed event", () => {
+    expect(contactEventTypeForDecision("closed")).toBe("closed");
+  });
+
+  it("has no event for decisions without a contact_events counterpart", () => {
+    expect(contactEventTypeForDecision("waiting_for_reply")).toBeNull();
+    expect(contactEventTypeForDecision("temporarily_unavailable")).toBeNull();
+    expect(contactEventTypeForDecision("new")).toBeNull();
   });
 });

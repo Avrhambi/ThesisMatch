@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  validateCvRecommendationsEvidence,
   validatePaperReviewsEvidence,
   validateResearcherReviewEvidence,
+  type CvRecommendation,
   type PaperReview,
   type ResearcherReview,
 } from "../../lib/analysis/evidenceValidation";
@@ -77,5 +79,56 @@ describe("validateResearcherReviewEvidence", () => {
     const { sanitized, hasGaps } = validateResearcherReviewEvidence(review, new Set(["source-1"]));
     expect(sanitized.papers[0].evidence).toHaveLength(0);
     expect(hasGaps).toBe(true);
+  });
+});
+
+function makeCvRecommendation(overrides: Partial<CvRecommendation> = {}): CvRecommendation {
+  return {
+    type: "emphasize",
+    section: "Experience",
+    currentText: "old text",
+    suggestedText: "new text",
+    reason: "matches researcher's focus area",
+    evidenceIds: ["source-1"],
+    ...overrides,
+  };
+}
+
+describe("validateCvRecommendationsEvidence", () => {
+  it("keeps evidenceIds within the allowed set and marks the claim verified", () => {
+    const { sanitized, claims, hasGaps } = validateCvRecommendationsEvidence(
+      [makeCvRecommendation()],
+      new Set(["source-1"]),
+    );
+    expect(sanitized[0].evidenceIds).toEqual(["source-1"]);
+    expect(hasGaps).toBe(false);
+    expect(claims[0].status).toBe("verified");
+  });
+
+  it("strips an evidenceId outside the allowed set and flags a gap", () => {
+    const { sanitized, hasGaps } = validateCvRecommendationsEvidence(
+      [makeCvRecommendation({ evidenceIds: ["not-allowed"] })],
+      new Set(["source-1"]),
+    );
+    expect(sanitized[0].evidenceIds).toHaveLength(0);
+    expect(hasGaps).toBe(true);
+  });
+
+  it("marks a non-missing_evidence recommendation with no surviving evidence as missing and flags a gap", () => {
+    const { claims, hasGaps } = validateCvRecommendationsEvidence(
+      [makeCvRecommendation({ evidenceIds: [] })],
+      new Set(["source-1"]),
+    );
+    expect(claims[0].status).toBe("missing");
+    expect(hasGaps).toBe(true);
+  });
+
+  it("does not flag a gap for a missing_evidence recommendation with no evidence", () => {
+    const { claims, hasGaps } = validateCvRecommendationsEvidence(
+      [makeCvRecommendation({ type: "missing_evidence", evidenceIds: [] })],
+      new Set(["source-1"]),
+    );
+    expect(claims[0].status).toBe("missing");
+    expect(hasGaps).toBe(false);
   });
 });
