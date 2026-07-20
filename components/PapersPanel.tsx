@@ -300,11 +300,14 @@ export default function PapersPanel({
 }
 
 function PaperReviewBlock({ review }: { review: PaperReview }) {
+  // Analyses stored before keyConcepts existed have no such field in their
+  // persisted result_json -- fall back to [] rather than crash on legacy data.
+  const keyConcepts = review.keyConcepts ?? [];
   if (
     !review.question &&
     !review.method &&
     !review.results &&
-    review.keyConcepts.length === 0 &&
+    keyConcepts.length === 0 &&
     review.limitations.length === 0 &&
     review.sources.length === 0
   ) {
@@ -313,9 +316,9 @@ function PaperReviewBlock({ review }: { review: PaperReview }) {
   return (
     <div className="mt-3 space-y-1.5 rounded-[var(--radius-card)] bg-paper-2 p-3 text-sm text-ink">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-accent">AI review</p>
-      {review.keyConcepts.length > 0 && (
+      {keyConcepts.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {review.keyConcepts.map((concept, i) => (
+          {keyConcepts.map((concept, i) => (
             <span key={i} className="rounded-[var(--radius-pill)] bg-paper px-2 py-0.5 text-xs text-ink">
               {concept}
             </span>
