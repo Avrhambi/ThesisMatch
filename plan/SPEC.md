@@ -1,20 +1,20 @@
 # SPEC.md
 
 ## Purpose
-A personal Hebrew RTL web app for daily discovery, evidence-backed analysis, and outreach tracking for potential BGU M.Sc. supervisors.
+A personal English LTR web app for daily discovery, evidence-backed analysis, and outreach tracking for potential BGU M.Sc. supervisors.
 
 ## Persistent setup
 The Settings area stores one research profile and one current CV. Replacing the CV preserves prior generated outreach. CV upload accepts one PDF, maximum 5 MB and 20 pages. The app extracts text, stores the original filename and text, and strips contact details before AI use.
 
 ## Flow 1 — Researchers
-The user presses **Refresh researchers**. The app reads the CRIS faculty-person list, validates membership against the five faculty institute pages, merges duplicates, and stores CRIS, ORCID, research-page, and personal-site links. The run is synchronous, processes at most 100 people, uses 15-second HTTP timeouts, and never retries automatically.
+The user presses **Refresh researchers**. The app reads the BGU public staff directory (CRIS is blocked by Cloudflare for non-browser requests), matches each person against the five research-branch keyword sets, merges duplicates, and stores BGU profile, ORCID, research-page, and personal-site links. The run is synchronous, processes at most 100 people, uses 15-second HTTP timeouts, and never retries automatically.
 
 The Researchers screen defaults to active records sorted by personal status priority, then match level descending, then name ascending. Filters: branch, match level, analysis state, personal status, and text search with 250 ms debounce. Page size is 25.
 
 Each row shows name, research branch(es), preliminary match, evidence coverage, analysis state, personal status, and one primary action. Available personal statuses are New, Interested, Analyze later, Not interested, Already contacted, Contact planned, Waiting for reply, Meeting scheduled, Temporarily unavailable, and Closed. Status and note changes save immediately.
 
 ## Flow 2 — Automatic research analysis
-Pressing **Analyze** selects up to five papers automatically: two best profile matches, two recent representative papers, and one distinct representative paper. Sources are CRIS first, ORCID/OpenAlex completion, Crossref DOI verification, and legal open-access text from publisher, repository, arXiv, or Unpaywall-linked locations.
+Pressing **Analyze** selects up to five papers automatically: two best profile matches, two recent representative papers, and one distinct representative paper. Sources are ORCID first, OpenAlex completion, Crossref DOI verification, and legal open-access text from publisher, repository, arXiv, or Unpaywall-linked locations.
 
 One counted analysis produces the researcher overview and all selected-paper reviews in one Gemini request. Full-text claims require full text; abstract-only records may support only abstract-level claims; metadata-only records may support only bibliographic facts and preliminary topic matching.
 
