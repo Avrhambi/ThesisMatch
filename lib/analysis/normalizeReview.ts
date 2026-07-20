@@ -1,0 +1,34 @@
+import type { PaperReview, ResearcherReview } from "./evidenceValidation";
+
+// The Gemini response schema (lib/gemini/schema.ts) uses "" instead of JSON
+// null for "not stated" fields; this converts back to the null the app's
+// domain types (and SCHEMA.md's PaperReview) expect.
+function emptyToNull(value: string): string | null {
+  return value.length > 0 ? value : null;
+}
+
+export function normalizePaperReview(raw: {
+  paperId: string;
+  question: string;
+  method: string;
+  results: string;
+  limitations: string[];
+  fit: PaperReview["fit"];
+  thesisPotential: PaperReview["thesisPotential"];
+  evidence: PaperReview["evidence"];
+}): PaperReview {
+  return {
+    paperId: raw.paperId,
+    question: emptyToNull(raw.question),
+    method: emptyToNull(raw.method),
+    results: emptyToNull(raw.results),
+    limitations: raw.limitations,
+    fit: raw.fit,
+    thesisPotential: raw.thesisPotential,
+    evidence: raw.evidence,
+  };
+}
+
+export function normalizeResearcherReview(raw: Omit<ResearcherReview, "papers"> & { papers: Parameters<typeof normalizePaperReview>[0][] }): ResearcherReview {
+  return { ...raw, papers: raw.papers.map(normalizePaperReview) };
+}

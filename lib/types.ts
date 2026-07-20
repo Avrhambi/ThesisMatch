@@ -40,7 +40,7 @@ export type DecisionStatus =
   | "closed";
 
 // "not_analyzed" is a UI-only pseudo-state: no analyses table rows exist yet
-// for a researcher (analysis logic ships in Milestone 5).
+// for a researcher.
 export type AnalysisState =
   | "not_analyzed"
   | "pending"
@@ -48,6 +48,32 @@ export type AnalysisState =
   | "completed"
   | "completed_with_gaps"
   | "failed";
+
+export type AnalysisKind = "researcher_deep_analysis" | "additional_papers_analysis" | "outreach_generation";
+
+export interface DailyUsageResponse {
+  localDate: string;
+  standardUsed: number;
+  standardLimit: 5;
+  extraUsed: number;
+}
+
+export interface AnalyzeResearcherRequest {
+  confirmExtra: boolean;
+}
+
+export interface AddPapersRequest {
+  titles: string[];
+  confirmExtra: boolean;
+}
+
+export interface AnalysisResponse {
+  analysisId: string;
+  state: AnalysisState;
+  isExtra: boolean;
+  result: unknown | null;
+  errorCode: string | null;
+}
 
 export interface RefreshResearchersResponse {
   discovered: number;

@@ -3,6 +3,8 @@ import pool, { query } from "../db";
 import { normalizeTitle } from "../publications/normalizeTitle";
 import type { QueryableClient } from "./researchers";
 import type { AccessLevel, SourceType } from "../types";
+import type { PaperEvidence } from "../prompts/evidenceContext";
+import type { SelectablePaper } from "../analysis/paperSelection";
 
 export interface SourceInput {
   type: SourceType;
@@ -170,5 +172,72 @@ export async function listPapersForResearcher(researcherId: string): Promise<Pap
     venue: row.venue,
     access: row.access,
     addedByUser: row.added_by_user,
+  }));
+}
+
+export async function getSelectablePapersForResearcher(researcherId: string): Promise<SelectablePaper[]> {
+  const { rows } = await query<{ id: string; title: string; abstract: string | null; publication_year: number | null }>(
+    "SELECT id, title, abstract, publication_year FROM papers WHERE researcher_id = $1",
+    [researcherId],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    abstract: row.abstract,
+    publicationYear: row.publication_year,
+  }));
+}
+
+export async function getPapersByDois(researcherId: string, dois: string[]): Promise<{ id: string; doi: string }[]> {
+  if (dois.length === 0) return [];
+  const { rows } = await query<{ id: string; doi: string }>(
+    "SELECT id, doi FROM papers WHERE researcher_id = $1 AND doi = ANY($2::text[])",
+    [researcherId, dois],
+  );
+  return rows;
+}
+
+// Evidence fed to Gemini: title/venue/year/abstract plus each paper's
+// `sources` rows as the only sourceId values the model may cite (see
+// lib/prompts/evidenceContext.ts). No full-article text is included because
+// none is ever fetched or stored (lib/publications/importSingleDoi.ts).
+export async function getPapersEvidence(researcherId: string, paperIds: string[]): Promise<PaperEvidence[]> {
+  if (paperIds.length === 0) return [];
+
+  const { rows: paperRows } = await query<{
+    id: string;
+    title: string;
+    publication_year: number | null;
+    venue: string | null;
+    abstract: string | null;
+    access: AccessLevel;
+  }>(
+    "SELECT id, title, publication_year, venue, abstract, access FROM papers WHERE researcher_id = $1 AND id = ANY($2::uuid[])",
+    [researcherId, paperIds],
+  );
+
+  const { rows: sourceRows } = await query<{
+    id: string;
+    paper_id: string;
+    type: SourceType;
+    url: string;
+    access: AccessLevel;
+  }>("SELECT id, paper_id, type, url, access FROM sources WHERE paper_id = ANY($1::uuid[])", [paperIds]);
+
+  const sourcesByPaper = new Map<string, { sourceId: string; type: SourceType; url: string; access: AccessLevel }[]>();
+  for (const row of sourceRows) {
+    const list = sourcesByPaper.get(row.paper_id) ?? [];
+    list.push({ sourceId: row.id, type: row.type, url: row.url, access: row.access });
+    sourcesByPaper.set(row.paper_id, list);
+  }
+
+  return paperRows.map((row) => ({
+    paperId: row.id,
+    title: row.title,
+    publicationYear: row.publication_year,
+    venue: row.venue,
+    abstract: row.abstract,
+    access: row.access,
+    sources: sourcesByPaper.get(row.id) ?? [],
   }));
 }
