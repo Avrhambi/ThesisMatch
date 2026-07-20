@@ -188,6 +188,40 @@ export async function getSelectablePapersForResearcher(researcherId: string): Pr
   }));
 }
 
+export interface SourceListItem {
+  id: string;
+  paperId: string | null;
+  type: SourceType;
+  url: string;
+  title: string | null;
+  retrievedAt: string;
+  access: AccessLevel;
+}
+
+export async function listSourcesForResearcher(researcherId: string): Promise<SourceListItem[]> {
+  const { rows } = await query<{
+    id: string;
+    paper_id: string | null;
+    type: SourceType;
+    url: string;
+    title: string | null;
+    retrieved_at: string;
+    access: AccessLevel;
+  }>(
+    "SELECT id, paper_id, type, url, title, retrieved_at, access FROM sources WHERE researcher_id = $1 ORDER BY retrieved_at DESC",
+    [researcherId],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    paperId: row.paper_id,
+    type: row.type,
+    url: row.url,
+    title: row.title,
+    retrievedAt: row.retrieved_at,
+    access: row.access,
+  }));
+}
+
 export async function getPapersByDois(researcherId: string, dois: string[]): Promise<{ id: string; doi: string }[]> {
   if (dois.length === 0) return [];
   const { rows } = await query<{ id: string; doi: string }>(

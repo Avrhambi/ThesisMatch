@@ -68,3 +68,40 @@ export const ADDITIONAL_PAPERS_JSON_SCHEMA = {
   },
   required: ["papers"],
 };
+
+const CV_RECOMMENDATION_TYPE_ENUM = ["reorder", "rewrite", "emphasize", "add_supported_information", "missing_evidence"];
+
+// currentText/suggestedText use "" rather than JSON null for the same reason
+// as paperReviewSchema's question/method/results (see comment above).
+const cvRecommendationSchema = {
+  type: "object",
+  properties: {
+    type: { type: "string", enum: CV_RECOMMENDATION_TYPE_ENUM },
+    section: { type: "string" },
+    currentText: { type: "string" },
+    suggestedText: { type: "string" },
+    reason: { type: "string" },
+    evidenceIds: { type: "array", items: { type: "string" } },
+  },
+  required: ["type", "section", "currentText", "suggestedText", "reason", "evidenceIds"],
+};
+
+const excludedClaimSchema = {
+  type: "object",
+  properties: {
+    claim: { type: "string" },
+    reason: { type: "string" },
+  },
+  required: ["claim", "reason"],
+};
+
+export const OUTREACH_JSON_SCHEMA = {
+  type: "object",
+  properties: {
+    subject: { type: "string" },
+    body: { type: "string" },
+    cvRecommendations: { type: "array", items: cvRecommendationSchema },
+    excludedClaims: { type: "array", items: excludedClaimSchema },
+  },
+  required: ["subject", "body", "cvRecommendations", "excludedClaims"],
+};

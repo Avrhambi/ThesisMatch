@@ -99,3 +99,54 @@ export function validateResearcherReviewEvidence(
     hasGaps,
   };
 }
+
+export type CvRecommendationType = "reorder" | "rewrite" | "emphasize" | "add_supported_information" | "missing_evidence";
+
+export interface CvRecommendation {
+  type: CvRecommendationType;
+  section: string;
+  currentText: string | null;
+  suggestedText: string | null;
+  reason: string;
+  evidenceIds: string[];
+}
+
+export interface ExcludedClaim {
+  claim: string;
+  reason: string;
+}
+
+export interface CvRecommendationsValidationResult {
+  sanitized: CvRecommendation[];
+  claims: ClaimToPersist[];
+  hasGaps: boolean;
+}
+
+// Mirrors validatePaperReviewsEvidence for outreach CV recommendations: any
+// evidenceId citing a sourceId outside the set actually fed to the model is
+// stripped. "missing_evidence" recommendations are exempt from the
+// verified/missing distinction since they exist precisely to flag a gap.
+export function validateCvRecommendationsEvidence(
+  recommendations: CvRecommendation[],
+  allowedSourceIds: ReadonlySet<string>,
+): CvRecommendationsValidationResult {
+  let hasGaps = false;
+  const claims: ClaimToPersist[] = [];
+
+  const sanitized = recommendations.map((rec) => {
+    const validIds = rec.evidenceIds.filter((id) => allowedSourceIds.has(id));
+    if (validIds.length !== rec.evidenceIds.length) hasGaps = true;
+
+    if (rec.type === "missing_evidence") {
+      claims.push({ claimType: `cv_recommendation_${rec.type}`, value: rec.suggestedText ?? rec.reason, status: "missing", evidenceSourceIds: validIds });
+    } else {
+      const status: ClaimStatus = validIds.length > 0 ? "verified" : "missing";
+      if (status === "missing") hasGaps = true;
+      claims.push({ claimType: `cv_recommendation_${rec.type}`, value: rec.suggestedText ?? rec.reason, status, evidenceSourceIds: validIds });
+    }
+
+    return { ...rec, evidenceIds: validIds };
+  });
+
+  return { sanitized, claims, hasGaps };
+}

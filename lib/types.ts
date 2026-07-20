@@ -99,6 +99,35 @@ export interface ImportPublicationsResponse {
   failed: number;
 }
 
+export type CvRecommendationType = "reorder" | "rewrite" | "emphasize" | "add_supported_information" | "missing_evidence";
+
+export interface CvRecommendation {
+  type: CvRecommendationType;
+  section: string;
+  currentText: string | null;
+  suggestedText: string | null;
+  reason: string;
+  evidenceIds: string[];
+}
+
+export interface ExcludedClaim {
+  claim: string;
+  reason: string;
+}
+
+export interface OutreachResult {
+  subject: string;
+  body: string;
+  cvRecommendations: CvRecommendation[];
+  excludedClaims: ExcludedClaim[];
+}
+
+export interface GenerateOutreachRequest {
+  note: string;
+  confirmExtra: boolean;
+  regenerate: boolean;
+}
+
 export type TitleResolutionStatus = "resolved" | "ambiguous" | "unrelated";
 
 export interface ResolvedTitleResult {

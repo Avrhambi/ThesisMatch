@@ -271,4 +271,22 @@ export async function updateResearcher(id: string, updates: UpdateResearcherFiel
 
   params.push(id);
   await query(`UPDATE researchers SET ${sets.join(", ")} WHERE id = $${params.length}`, params);
+
+  const eventType = updates.decision ? contactEventTypeForDecision(updates.decision) : null;
+  if (eventType) {
+    await query(
+      "INSERT INTO contact_events (id, researcher_id, event_type, occurred_at) VALUES ($1, $2, $3, now())",
+      [randomUUID(), id, eventType],
+    );
+  }
+}
+
+// Only decision statuses with a direct contact_events counterpart create a
+// timeline entry; others (e.g. waiting_for_reply, temporarily_unavailable)
+// have no matching event_type and are tracked only via the decision column.
+export function contactEventTypeForDecision(decision: DecisionStatus): "contacted" | "meeting_scheduled" | "closed" | null {
+  if (decision === "already_contacted") return "contacted";
+  if (decision === "meeting_scheduled") return "meeting_scheduled";
+  if (decision === "closed") return "closed";
+  return null;
 }
