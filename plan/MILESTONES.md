@@ -19,10 +19,10 @@
 - [x] Run `npm run verify`
 
 ## Milestone 4 — Publications and access evidence
-- [ ] Read `SPEC.md` and `SCHEMA.md`; import publications. Note: CRIS is Cloudflare-blocked to non-browser requests (see Milestone 3), so a CRIS-based import will hit the same wall — check for a reachable per-person publication source (e.g. the BGU profile page, ORCID as primary rather than completion-only) before assuming CRIS scraping works here. Complete from ORCID/OpenAlex, verify DOI metadata with Crossref, and deduplicate versions.
-- [ ] Resolve legal open-access locations and store metadata/abstract/full-text access levels without bypassing access controls.
-- [ ] Build paper lists and title-resolution UI for 1–10 user-supplied paper titles, including ambiguous and unrelated results.
-- [ ] Run `npm run verify`
+- [x] Read `SPEC.md` and `SCHEMA.md`; import publications. Note: CRIS is Cloudflare-blocked to non-browser requests (see Milestone 3), so a CRIS-based import will hit the same wall — check for a reachable per-person publication source (e.g. the BGU profile page, ORCID as primary rather than completion-only) before assuming CRIS scraping works here. Complete from ORCID/OpenAlex, verify DOI metadata with Crossref, and deduplicate versions. Shipped as: ORCID is the primary DOI source when the BGU directory supplied one (Milestone 3), completed via OpenAlex's works-by-orcid filter; researchers without an ORCID fall back to an OpenAlex author-name search that requires an exact name match (after stripping academic-title tokens like "Professor Emeritus") plus a Ben-Gurion affiliation before it's trusted, else the source is reported `unavailable` rather than guessed at. Every DOI is only persisted once Crossref confirms it resolves; DOI-based `ON CONFLICT` upsert dedupes versions.
+- [x] Resolve legal open-access locations and store metadata/abstract/full-text access levels without bypassing access controls. Shipped as: OpenAlex's `open_access` field (itself Unpaywall-derived) decides `full_text_open` vs `abstract` vs `metadata_only`; no full-text bytes are fetched, only the access level and its evidence source (Crossref + OpenAlex `sources` rows with retrieval time and content hash) are persisted per CLAUDE.md's evidence-before-AI-call requirement.
+- [x] Build paper lists and title-resolution UI for 1–10 user-supplied paper titles, including ambiguous and unrelated results. Shipped as: deterministic Crossref bibliographic search + author-family-name matching (no LLM, per CLAUDE.md) classifies each pasted title resolved/ambiguous/unrelated; resolved titles import through the same Crossref-verified path with `added_by_user=true`.
+- [x] Run `npm run verify`
 
 ## Milestone 5 — Gemini analyses and daily limits
 - [ ] Read all five build-pack files; implement serialized `gemini-3.1-flash-lite` structured-output calls with evidence-ID validation and prompts in `lib/prompts/`.
