@@ -153,6 +153,7 @@ export interface ResearcherListItem {
   personalNote: string | null;
   discoveredAt: string;
   refreshedAt: string | null;
+  analysisState: AnalysisState;
 }
 
 export interface ListResearchersFilters {
@@ -164,12 +165,6 @@ export interface ListResearchersFilters {
 }
 
 const PAGE_SIZE = 25;
-
-// No analyses table rows exist for any researcher yet (that logic ships in
-// Milestone 5), so every researcher's analysis state is currently
-// "not_analyzed" by definition. The filter is UI-only until then; see
-// app/api/researchers/route.ts.
-export const CURRENT_ANALYSIS_STATE: AnalysisState = "not_analyzed";
 
 export async function listResearchers(
   filters: ListResearchersFilters,
@@ -221,13 +216,20 @@ export async function listResearchers(
     discovered_at: string;
     refreshed_at: string | null;
     branches: string[] | null;
+    analysis_state: AnalysisState | null;
   }>(
     `SELECT r.id, r.full_name, r.decision, r.preliminary_match, r.personal_note, r.discovered_at, r.refreshed_at,
-            array_agg(rb.branch::text) FILTER (WHERE rb.verified) AS branches
+            array_agg(rb.branch::text) FILTER (WHERE rb.verified) AS branches,
+            la.state AS analysis_state
      FROM researchers r
      LEFT JOIN researcher_branches rb ON rb.researcher_id = r.id
+     LEFT JOIN LATERAL (
+       SELECT state FROM analyses
+       WHERE researcher_id = r.id AND kind = 'researcher_deep_analysis'
+       ORDER BY created_at DESC LIMIT 1
+     ) la ON true
      ${whereClause}
-     GROUP BY r.id
+     GROUP BY r.id, la.state
      ORDER BY r.decision ASC, r.preliminary_match DESC, r.full_name ASC
      LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}`,
     [...params, PAGE_SIZE, offset],
@@ -248,6 +250,7 @@ export async function listResearchers(
       personalNote: row.personal_note,
       discoveredAt: row.discovered_at,
       refreshedAt: row.refreshed_at,
+      analysisState: row.analysis_state ?? "not_analyzed",
     })),
     total: Number(countRows[0]?.count ?? 0),
   };

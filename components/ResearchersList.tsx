@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isStale } from "../lib/discovery/stale";
-import { BRANCH_LABELS, DECISION_LABELS, MATCH_LEVEL_LABELS } from "../lib/labels";
+import { ANALYSIS_STATE_LABELS, BRANCH_LABELS, DECISION_LABELS, MATCH_LEVEL_LABELS } from "../lib/labels";
 import type { AnalysisState, DecisionStatus, MatchLevel, ResearchBranch } from "../lib/types";
 
 interface ResearcherRow {
@@ -290,7 +290,7 @@ export default function ResearchersList() {
 
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
                   <span>Preliminary match: {MATCH_LEVEL_LABELS[item.preliminaryMatch]}</span>
-                  <span>Analysis status: not yet analyzed</span>
+                  <span>Analysis status: {ANALYSIS_STATE_LABELS[item.analysisState]}</span>
                   <select
                     value={item.decision}
                     onChange={(e) => updateDecision(item.id, e.target.value as DecisionStatus)}
