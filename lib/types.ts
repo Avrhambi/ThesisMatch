@@ -135,6 +135,7 @@ export interface OutreachResult {
   subject: string;
   body: string;
   cvRecommendations: CvRecommendation[];
+  droppedRecommendations: string[];
   excludedClaims: ExcludedClaim[];
 }
 

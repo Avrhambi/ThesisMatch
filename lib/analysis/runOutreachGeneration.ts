@@ -95,10 +95,13 @@ async function runAndPersist(
   await markAnalysisRunning(analysis.id);
 
   const evidence = await getPapersEvidence(analysis.researcherId, paperIds);
-  const researcherSummary =
+  const deepReview =
     deepAnalysis.resultJson && typeof deepAnalysis.resultJson === "object"
-      ? String((deepAnalysis.resultJson as { summary?: string }).summary ?? "")
-      : "";
+      ? (deepAnalysis.resultJson as { summary?: string; topics?: string[]; mismatches?: string[] })
+      : null;
+  const researcherSummary = deepReview?.summary ?? "";
+  const researcherTopics = deepReview?.topics ?? [];
+  const researcherMismatches = deepReview?.mismatches ?? [];
 
   const prompt = buildOutreachPrompt({
     researcherName,
@@ -106,6 +109,8 @@ async function runAndPersist(
     cvRedactedText,
     researcherNote: note,
     researcherSummary,
+    researcherTopics,
+    researcherMismatches,
     papers: evidence,
   });
 
@@ -128,13 +133,14 @@ async function runAndPersist(
 
   const normalizedRecommendations: CvRecommendation[] = outcome.data.cvRecommendations.map(normalizeCvRecommendation);
   const allowedSourceIds = new Set(evidence.flatMap((paper) => paper.sources.map((s) => s.sourceId)));
-  const { sanitized, claims, hasGaps } = validateCvRecommendationsEvidence(normalizedRecommendations, allowedSourceIds);
+  const { sanitized, dropped, claims, hasGaps } = validateCvRecommendationsEvidence(normalizedRecommendations, allowedSourceIds);
 
   const finalState = hasGaps ? "completed_with_gaps" : "completed";
   const resultJson = {
     subject: outcome.data.subject,
     body: outcome.data.body,
     cvRecommendations: sanitized,
+    droppedRecommendations: dropped,
     excludedClaims: outcome.data.excludedClaims,
   };
 

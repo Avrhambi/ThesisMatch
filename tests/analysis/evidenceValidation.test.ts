@@ -111,21 +111,24 @@ describe("validateCvRecommendationsEvidence", () => {
     expect(claims[0].status).toBe("verified");
   });
 
-  it("strips an evidenceId outside the allowed set and flags a gap", () => {
-    const { sanitized, hasGaps } = validateCvRecommendationsEvidence(
+  it("drops a non-missing_evidence recommendation left with no surviving evidence, and flags a gap", () => {
+    const { sanitized, dropped, claims, hasGaps } = validateCvRecommendationsEvidence(
       [makeCvRecommendation({ evidenceIds: ["not-allowed"] })],
       new Set(["source-1"]),
     );
-    expect(sanitized[0].evidenceIds).toHaveLength(0);
+    expect(sanitized).toHaveLength(0);
+    expect(dropped).toHaveLength(1);
+    expect(claims).toHaveLength(0);
     expect(hasGaps).toBe(true);
   });
 
-  it("marks a non-missing_evidence recommendation with no surviving evidence as missing and flags a gap", () => {
-    const { claims, hasGaps } = validateCvRecommendationsEvidence(
+  it("drops a non-missing_evidence recommendation given no evidence at all, and flags a gap", () => {
+    const { sanitized, dropped, hasGaps } = validateCvRecommendationsEvidence(
       [makeCvRecommendation({ evidenceIds: [] })],
       new Set(["source-1"]),
     );
-    expect(claims[0].status).toBe("missing");
+    expect(sanitized).toHaveLength(0);
+    expect(dropped).toHaveLength(1);
     expect(hasGaps).toBe(true);
   });
 

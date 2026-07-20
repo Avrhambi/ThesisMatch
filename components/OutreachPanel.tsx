@@ -263,6 +263,17 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
               </ul>
             </div>
           )}
+
+          {result.droppedRecommendations.length > 0 && (
+            <div>
+              <p className="mb-2 font-medium text-warning">Recommendations dropped for lack of evidence</p>
+              <ul className="list-inside list-disc text-xs text-warning">
+                {result.droppedRecommendations.map((reason, i) => (
+                  <li key={i}>{reason}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>
