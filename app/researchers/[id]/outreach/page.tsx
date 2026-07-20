@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getResearcherById } from "../../../../lib/repositories/researchers";
+import OutreachPanel from "../../../../components/OutreachPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +14,7 @@ export default async function OutreachPage({ params }: { params: Promise<{ id: s
     <main className="mx-auto max-w-3xl p-8" dir="rtl">
       <h1 className="mb-2 text-xl font-semibold">פנייה — {researcher.fullName}</h1>
 
-      <div className="rounded border border-dashed border-gray-300 p-8 text-center text-gray-600">
-        <p>יצירת פנייה זמינה לאחר השלמת ניתוח מחקרי לחוקר זה.</p>
-      </div>
+      <OutreachPanel researcherId={researcher.id} />
     </main>
   );
 }

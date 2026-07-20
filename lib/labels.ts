@@ -1,4 +1,5 @@
-import type { AccessLevel, AnalysisState, DecisionStatus, MatchLevel, ResearchBranch } from "./types";
+import type { AccessLevel, AnalysisState, CvRecommendationType, DecisionStatus, MatchLevel, ResearchBranch } from "./types";
+import type { ContactEventType } from "./repositories/contactEvents";
 
 export const BRANCH_LABELS: Record<ResearchBranch, string> = {
   s3: "תוכנה, מערכות ואבטחה (S3)",
@@ -43,4 +44,26 @@ export const ANALYSIS_STATE_LABELS: Record<AnalysisState, string> = {
   completed: "ניתוח הושלם",
   completed_with_gaps: "ניתוח הושלם עם פערי מידע",
   failed: "הניתוח נכשל",
+};
+
+export const CV_RECOMMENDATION_TYPE_LABELS: Record<CvRecommendationType, string> = {
+  reorder: "שינוי סדר",
+  rewrite: "ניסוח מחדש",
+  emphasize: "הדגשה",
+  add_supported_information: "הוספת מידע נתמך",
+  missing_evidence: "חסרה ראיה",
+};
+
+export const CLAIM_STATUS_LABELS: Record<"verified" | "inferred" | "conflicting" | "missing", string> = {
+  verified: "מאומת",
+  inferred: "מוסק",
+  conflicting: "סותר",
+  missing: "חסר",
+};
+
+export const CONTACT_EVENT_LABELS: Record<ContactEventType, string> = {
+  contacted: "נשלחה פנייה",
+  reply_received: "התקבלה תשובה",
+  meeting_scheduled: "נקבעה פגישה",
+  closed: "נסגר",
 };

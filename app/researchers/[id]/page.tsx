@@ -4,6 +4,8 @@ import { getResearcherById } from "../../../lib/repositories/researchers";
 import { listPapersForResearcher } from "../../../lib/repositories/papers";
 import PapersPanel from "../../../components/PapersPanel";
 import AnalysisPanel from "../../../components/AnalysisPanel";
+import EvidencePanel from "../../../components/EvidencePanel";
+import ContactTimeline from "../../../components/ContactTimeline";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +33,11 @@ export default async function ResearcherDetailPage({
       <AnalysisPanel researcherId={researcher.id} />
 
       <PapersPanel researcherId={researcher.id} initialPapers={papers} />
+
+      <div className="mt-4 space-y-4">
+        <EvidencePanel researcherId={researcher.id} />
+        <ContactTimeline researcherId={researcher.id} />
+      </div>
 
       <Link
         href={`/researchers/${researcher.id}/outreach`}
