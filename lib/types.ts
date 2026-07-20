@@ -7,6 +7,12 @@ export type ResearchBranch =
 
 export type MatchLevel = "unknown" | "low" | "medium" | "high";
 
+// "unverified" means a disqualifying signal (e.g. Emeritus) was found in the
+// researcher's name; "verified_available" means none was found -- it is not
+// a positive confirmation of active supervision, just the absence of a known
+// red flag, since the app has no way to confirm active availability either way.
+export type SupervisionStatus = "unverified" | "verified_available";
+
 export type AccessLevel =
   | "metadata_only"
   | "abstract"
