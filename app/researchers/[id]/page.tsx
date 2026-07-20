@@ -30,7 +30,7 @@ export default async function ResearcherDetailPage({
           rel="noreferrer"
           className="underline decoration-rule underline-offset-4 hover:decoration-accent hover:text-accent"
         >
-          CRIS page
+          Profile page
         </a>
       </p>
 

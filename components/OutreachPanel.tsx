@@ -100,12 +100,12 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
 
   const noteInput = (
     <div>
-      <label className="mb-1 block text-sm font-medium text-ink">Specific knowledge about the researcher</label>
+      <label className="mb-1 block text-sm font-medium text-ink">Specific knowledge</label>
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={4}
-        placeholder="Share relevant information about the researcher (1–10,000 characters)"
+        placeholder="Share relevant information (1–10,000 characters)"
         className="w-full rounded-[var(--radius-input)] border border-rule bg-paper p-2 text-sm text-ink focus:border-accent"
       />
       <p className="mt-1 font-mono text-xs text-muted">{note.trim().length} characters</p>

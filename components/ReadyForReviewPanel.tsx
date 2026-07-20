@@ -87,9 +87,11 @@ export default function ReadyForReviewPanel() {
             <Link href={`/researchers/${item.id}`} className="font-medium text-ink hover:text-accent">
               {item.fullName}
             </Link>
-            <span className="rounded-[var(--radius-pill)] bg-paper-2 px-2 py-0.5 text-xs text-accent">
-              {MATCH_LEVEL_LABELS[item.preliminaryMatch]}
-            </span>
+            {item.preliminaryMatch !== "unknown" && (
+              <span className="rounded-[var(--radius-pill)] bg-paper-2 px-2 py-0.5 text-xs text-accent">
+                {MATCH_LEVEL_LABELS[item.preliminaryMatch]}
+              </span>
+            )}
           </li>
         ))}
       </ul>
