@@ -32,6 +32,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
               subject: latest.outreach.subject,
               body: latest.outreach.body,
               cvRecommendations: latest.outreach.cvRecommendations,
+              droppedRecommendations: latest.outreach.droppedRecommendations,
               excludedClaims: latest.outreach.excludedClaims,
             }
           : null,
@@ -55,10 +56,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request body" }, { status: 400 });
   }
 
-  const outcome = await runOutreachGeneration(id, parsed.data.note, parsed.data.confirmExtra, parsed.data.regenerate);
+  const outcome = await runOutreachGeneration(
+    id,
+    parsed.data.note,
+    parsed.data.confirmExtra,
+    parsed.data.regenerate,
+    parsed.data.overrideLowFit,
+  );
 
   if (outcome.status === "needs_confirmation") {
     return NextResponse.json({ error: "confirmation_required" }, { status: 409 });
+  }
+  if (outcome.status === "needs_low_fit_confirmation") {
+    return NextResponse.json({ error: "low_fit_confirmation_required", reasons: outcome.reasons }, { status: 409 });
   }
   if (outcome.status === "error") {
     const status = outcome.errorCode === "researcher_not_found" ? 404 : 422;

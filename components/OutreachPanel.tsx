@@ -4,10 +4,18 @@ import { useEffect, useState } from "react";
 import { ANALYSIS_STATE_LABELS, CV_RECOMMENDATION_TYPE_LABELS, DECISION_LABELS } from "../lib/labels";
 import type { AnalysisResponse, AnalysisState, CvRecommendation, DecisionStatus, ExcludedClaim, OutreachResult } from "../lib/types";
 
+type LowFitReason = "low_fit" | "supervision_unverified";
+
+const LOW_FIT_REASON_LABELS: Record<LowFitReason, string> = {
+  low_fit: "This researcher was assessed as a low or unknown research fit.",
+  supervision_unverified: "This researcher's supervision availability could not be verified (e.g. Emeritus/retired).",
+};
+
 type PanelState =
   | { kind: "loading" }
   | { kind: "empty" }
   | { kind: "confirm_extra" }
+  | { kind: "confirm_low_fit"; reasons: LowFitReason[] }
   | { kind: "error"; message: string }
   | { kind: "result"; analysis: AnalysisResponse; copiedAt: string | null; sentAt: string | null };
 
@@ -40,7 +48,7 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
       .catch(() => setState({ kind: "error", message: "Failed to load outreach" }));
   }, [researcherId]);
 
-  async function generate(confirmExtra: boolean, regenerate: boolean) {
+  async function generate(confirmExtra: boolean, regenerate: boolean, overrideLowFit: boolean = false) {
     if (note.trim().length === 0 || note.trim().length > 10000) return;
 
     setBusy(true);
@@ -48,11 +56,16 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
       const res = await fetch(`/api/researchers/${researcherId}/outreach`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: note.trim(), confirmExtra, regenerate }),
+        body: JSON.stringify({ note: note.trim(), confirmExtra, regenerate, overrideLowFit }),
       });
       if (res.status === 409) {
+        const body = await res.json().catch(() => null);
         setPendingRegenerate(regenerate);
-        setState({ kind: "confirm_extra" });
+        if (body?.error === "low_fit_confirmation_required") {
+          setState({ kind: "confirm_low_fit", reasons: body.reasons ?? [] });
+        } else {
+          setState({ kind: "confirm_extra" });
+        }
         return;
       }
       if (!res.ok) {
@@ -125,6 +138,37 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
               className="rounded-[var(--radius-input)] bg-warning px-3 py-1.5 text-white transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
             >
               Confirm &amp; run
+            </button>
+            <button
+              onClick={() => setState({ kind: "empty" })}
+              className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-ink hover:border-accent"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (state.kind === "confirm_low_fit") {
+    return (
+      <div className="space-y-3">
+        {noteInput}
+        <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg p-4 text-sm">
+          <p className="mb-2 font-medium text-warning">Recommendation: do not contact yet</p>
+          <ul className="mb-3 list-inside list-disc text-ink">
+            {state.reasons.map((reason) => (
+              <li key={reason}>{LOW_FIT_REASON_LABELS[reason]}</li>
+            ))}
+          </ul>
+          <div className="flex gap-2">
+            <button
+              onClick={() => generate(false, pendingRegenerate, true)}
+              disabled={busy}
+              className="rounded-[var(--radius-input)] bg-warning px-3 py-1.5 text-white transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
+            >
+              Generate anyway
             </button>
             <button
               onClick={() => setState({ kind: "empty" })}

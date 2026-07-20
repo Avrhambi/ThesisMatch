@@ -11,6 +11,7 @@ export const generateOutreachRequestSchema = z.object({
   note: researcherNoteContentSchema,
   confirmExtra: z.boolean().optional().default(false),
   regenerate: z.boolean().optional().default(false),
+  overrideLowFit: z.boolean().optional().default(false),
 });
 
 export const markOutreachRequestSchema = z.object({
