@@ -91,7 +91,7 @@ export default function ResearcherFlow({
 
       {stage === "verdict" && (
         <div className="space-y-4">
-          <AnalysisPanel researcherId={researcherId} sections={{ verdict: true, papers: false }} />
+          <AnalysisPanel researcherId={researcherId} />
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setStage("publications")}
@@ -113,7 +113,6 @@ export default function ResearcherFlow({
       {stage === "publications" && (
         <div className="space-y-4">
           <PapersPanel researcherId={researcherId} initialPapers={initialPapers} />
-          <AnalysisPanel researcherId={researcherId} sections={{ verdict: false, papers: true }} />
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setStage("verdict")}
