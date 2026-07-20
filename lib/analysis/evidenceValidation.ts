@@ -11,6 +11,7 @@ export interface PaperReview {
   question: string | null;
   method: string | null;
   results: string | null;
+  keyConcepts: string[];
   limitations: string[];
   fit: MatchLevel;
   thesisPotential: MatchLevel;

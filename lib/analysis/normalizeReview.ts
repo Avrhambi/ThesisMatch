@@ -12,6 +12,7 @@ export function normalizePaperReview(raw: {
   question: string;
   method: string;
   results: string;
+  keyConcepts: string[];
   limitations: string[];
   fit: PaperReview["fit"];
   thesisPotential: PaperReview["thesisPotential"];
@@ -22,6 +23,7 @@ export function normalizePaperReview(raw: {
     question: emptyToNull(raw.question),
     method: emptyToNull(raw.method),
     results: emptyToNull(raw.results),
+    keyConcepts: raw.keyConcepts,
     limitations: raw.limitations,
     fit: raw.fit,
     thesisPotential: raw.thesisPotential,

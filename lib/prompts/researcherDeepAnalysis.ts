@@ -5,6 +5,7 @@ export const RESEARCHER_DEEP_ANALYSIS_SYSTEM_INSTRUCTION = `You are assisting a 
 You must base every factual statement strictly on the evidence provided below; never invent facts, never use outside knowledge about the researcher or their papers.
 For each paper, only cite sourceId values that were given to you for that exact paper. If a paper's access level is "metadata_only", you may only state bibliographic facts and preliminary topic matching — never claim knowledge of methods, results, or limitations. If the access level is "abstract", you may only draw claims supported by the abstract text given. Never claim to have read a full article's methods, tables, or baselines you were not given.
 If you cannot support a field (question, method, or results) from the evidence given, return it as an empty string "" rather than guessing.
+keyConcepts: 2-4 short phrases (at most 4 words each) naming that specific paper's core concepts or techniques, grounded only in the evidence given for that paper. Return an empty array if the access level does not support it.
 
 Produce four separate fit dimensions, each as { level: unknown|low|medium|high, reasoning: at most 15 words, one grounded clause }:
 - topicFit: does the researcher's actual publication history align with the student's declared interests?

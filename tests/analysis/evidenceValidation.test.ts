@@ -14,6 +14,7 @@ function makePaperReview(overrides: Partial<PaperReview> = {}): PaperReview {
     question: "What is the research question?",
     method: "A method",
     results: "Some results",
+    keyConcepts: [],
     limitations: [],
     fit: "high",
     thesisPotential: "high",

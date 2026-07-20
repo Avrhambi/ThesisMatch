@@ -30,12 +30,13 @@ const paperReviewSchema = {
     question: { type: "string" },
     method: { type: "string" },
     results: { type: "string" },
+    keyConcepts: { type: "array", items: { type: "string" } },
     limitations: { type: "array", items: { type: "string" } },
     fit: { type: "string", enum: MATCH_LEVEL_ENUM },
     thesisPotential: { type: "string", enum: MATCH_LEVEL_ENUM },
     evidence: { type: "array", items: evidenceRefSchema },
   },
-  required: ["paperId", "question", "method", "results", "limitations", "fit", "thesisPotential", "evidence"],
+  required: ["paperId", "question", "method", "results", "keyConcepts", "limitations", "fit", "thesisPotential", "evidence"],
 };
 
 export const RESEARCHER_REVIEW_JSON_SCHEMA = {
