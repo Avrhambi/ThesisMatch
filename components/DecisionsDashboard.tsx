@@ -81,7 +81,6 @@ export default function DecisionsDashboard() {
                   {item.researcherName}
                 </Link>
                 <span className="text-xs text-muted">
-                  {item.oldDecision ? DECISION_LABELS[item.oldDecision] : "None"} &rarr;{" "}
                   {DECISION_LABELS[item.newDecision]}
                   {" · "}
                   {new Date(item.changedAt).toLocaleString("en-US")}
