@@ -1,0 +1,68 @@
+{
+  "totalResults": 4,
+  "totalPages": 1,
+  "staffMembers": [
+    {
+      "name": "Associate Professor (Ret.) Miriam Balaban",
+      "departments": [
+        {
+          "name": "The Stein Faculty of Computer and Information Science, Institute for Software, Systems, and Security",
+          "memberPosition": "",
+          "stepInGradeDescription": "",
+          "gradeDescription": ""
+        }
+      ],
+      "orcLink": null,
+      "email": "mira@bgu.ac.il",
+      "pageUrl": "/en/people/mira/"
+    },
+    {
+      "name": "Professor Emeritus Uri Abraham",
+      "departments": [
+        {
+          "name": "The Stein Faculty of Computer and Information Science, Institute for the Theory of Computing",
+          "memberPosition": "",
+          "stepInGradeDescription": "",
+          "gradeDescription": ""
+        }
+      ],
+      "orcLink": null,
+      "email": "abraham@bgu.ac.il",
+      "pageUrl": "/en/people/abraham/"
+    },
+    {
+      "name": "Prof. OMRI AZENCOT",
+      "departments": [
+        {
+          "name": "The Stein Faculty of Computer and Information Science, Institute for Applied AI Research",
+          "memberPosition": "חבר/ת סגל אקדמי בכיר",
+          "stepInGradeDescription": "Associate Professor",
+          "gradeDescription": ""
+        },
+        {
+          "name": "התוכנית לסטטיסטיקה וניתוח נתונים",
+          "memberPosition": "חוקר במרכז",
+          "stepInGradeDescription": "",
+          "gradeDescription": ""
+        }
+      ],
+      "orcLink": "https://orcid.org/0000-0001-9407-6601",
+      "email": "azencot@bgu.ac.il",
+      "pageUrl": "/en/people/azencot/"
+    },
+    {
+      "name": "Prof. Ibrahim Abdulhalim",
+      "departments": [
+        {
+          "name": "Faculty of Engineering Sciences, School of Electrical and Computer Engineering",
+          "memberPosition": "חבר/ת סגל אקדמי בכיר",
+          "stepInGradeDescription": "Full Professor",
+          "gradeDescription": ""
+        }
+      ],
+      "orcLink": "https://orcid.org/0000-0002-1474-5412",
+      "email": "abdulhlm@bgu.ac.il",
+      "pageUrl": "/en/people/abdulhlm/"
+    }
+  ]
+}

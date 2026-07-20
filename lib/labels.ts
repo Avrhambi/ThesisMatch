@@ -1,0 +1,29 @@
+import type { DecisionStatus, MatchLevel, ResearchBranch } from "./types";
+
+export const BRANCH_LABELS: Record<ResearchBranch, string> = {
+  s3: "תוכנה, מערכות ואבטחה (S3)",
+  software_systems_security: "אבטחת מערכות תוכנה",
+  interdisciplinary_computational_science: "מדעי המחשוב הבין-תחומיים",
+  theory_of_computing: "תורת החישוב",
+  foundations_of_ai: "יסודות הבינה המלאכותית",
+};
+
+export const DECISION_LABELS: Record<DecisionStatus, string> = {
+  new: "חדש",
+  interested: "מעניין",
+  analyze_later: "לניתוח בהמשך",
+  not_interested: "לא מעניין",
+  already_contacted: "כבר נוצר קשר",
+  contact_planned: "מתוכננת פנייה",
+  waiting_for_reply: "ממתין לתשובה",
+  meeting_scheduled: "נקבעה פגישה",
+  temporarily_unavailable: "לא זמין כרגע",
+  closed: "סגור",
+};
+
+export const MATCH_LEVEL_LABELS: Record<MatchLevel, string> = {
+  unknown: "לא ידוע",
+  low: "נמוכה",
+  medium: "בינונית",
+  high: "גבוהה",
+};

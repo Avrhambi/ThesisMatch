@@ -15,8 +15,8 @@
 ## Milestone 3 — Researcher discovery and tracking
 - [ ] Read `SPEC.md` and `SCHEMA.md`; implement CRIS faculty-person discovery and validation against the five institute pages with 15-second fetch timeouts.
 - [ ] Implement deterministic identity merging, source persistence, content hashes, branch assignment, and stale-state calculation.
-- [ ] Build the Researchers list, filters, pagination, status updates, notes, and refresh progress/results.
-- [ ] Run `npm run verify`
+- [x] Build the Researchers list, filters, pagination, status updates, notes, and refresh progress/results.
+- [x] Run `npm run verify`
 
 ## Milestone 4 — Publications and access evidence
 - [ ] Read `SPEC.md` and `SCHEMA.md`; import CRIS publications, complete from ORCID/OpenAlex, verify DOI metadata with Crossref, and deduplicate versions.
