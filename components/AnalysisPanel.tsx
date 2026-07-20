@@ -3,8 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ANALYSIS_STATE_LABELS, MATCH_LEVEL_LABELS, analysisErrorMessage } from "../lib/labels";
-import type { AnalysisResponse, AnalysisState } from "../lib/types";
+import {
+  ACCESS_LEVEL_LABELS,
+  ANALYSIS_STATE_LABELS,
+  MATCH_LEVEL_LABELS,
+  SELECTION_REASON_LABELS,
+  analysisErrorMessage,
+} from "../lib/labels";
+import type { AccessLevel, AnalysisResponse, AnalysisState } from "../lib/types";
 
 interface PaperReview {
   paperId: string;
@@ -15,6 +21,12 @@ interface PaperReview {
   fit: string;
   thesisPotential: string;
   evidence: { sourceId: string; label: string; access: string }[];
+  title: string | null;
+  publicationYear: number | null;
+  venue: string | null;
+  access: AccessLevel | null;
+  selectionReason: string | null;
+  sources: { sourceId: string; type: string; url: string; access: AccessLevel }[];
 }
 
 interface ResearcherReview {
@@ -239,13 +251,44 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       {allPapers.length > 0 && (
         <div className="rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
           <p className="mb-2 font-medium">Publication review</p>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {allPapers.map((paper) => (
-              <li key={paper.paperId} className="rounded-[var(--radius-card)] border border-rule p-2">
+              <li key={paper.paperId} className="rounded-[var(--radius-card)] border border-rule p-3">
+                <div className="mb-1 font-medium text-ink">{paper.title ?? "(title unavailable)"}</div>
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+                  {paper.publicationYear && <span>{paper.publicationYear}</span>}
+                  {paper.venue && <span>{paper.venue}</span>}
+                  {paper.access && (
+                    <span className="rounded-[var(--radius-pill)] bg-paper-2 px-2 py-0.5 text-accent">
+                      {ACCESS_LEVEL_LABELS[paper.access]}
+                    </span>
+                  )}
+                  {paper.selectionReason && (
+                    <span className="rounded-[var(--radius-pill)] bg-paper-2 px-2 py-0.5">
+                      {SELECTION_REASON_LABELS[paper.selectionReason] ?? paper.selectionReason}
+                    </span>
+                  )}
+                </div>
                 {paper.question && <p>Research question: {paper.question}</p>}
                 {paper.method && <p>Method: {paper.method}</p>}
                 {paper.results && <p>Results: {paper.results}</p>}
-                <p className="text-xs text-muted">Sources: {paper.evidence.length}</p>
+                {paper.sources.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-xs text-muted">
+                    {paper.sources.map((source) => (
+                      <li key={source.sourceId}>
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="truncate hover:text-accent hover:underline"
+                        >
+                          {source.url}
+                        </a>{" "}
+                        · {ACCESS_LEVEL_LABELS[source.access]}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>

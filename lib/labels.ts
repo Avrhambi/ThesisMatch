@@ -81,3 +81,10 @@ export const ANALYSIS_ERROR_LABELS: Record<string, string> = {
 export function analysisErrorMessage(errorCode: string): string {
   return ANALYSIS_ERROR_LABELS[errorCode] ?? "Analysis failed. Try again.";
 }
+
+export const SELECTION_REASON_LABELS: Record<string, string> = {
+  profile_match: "Best profile match",
+  recent: "Recent work",
+  distinct: "Distinct direction",
+  user_added: "Added by you",
+};
