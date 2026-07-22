@@ -75,6 +75,32 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       });
   }, [researcherId]);
 
+  // A deep analysis can be in flight without this panel having started it --
+  // the background auto-fill scheduler (readyForReviewScheduler) creates
+  // pending/running rows too. Without polling, the panel would show a frozen
+  // "Analyzing…" and the user would have to refresh the page repeatedly to see
+  // the finished result. Poll until the row reaches a terminal state.
+  const pollingAnalysis = state.kind === "result" ? state.analysis : null;
+  const pollingState = pollingAnalysis?.state;
+  useEffect(() => {
+    if (pollingState !== "pending" && pollingState !== "running") return;
+    let cancelled = false;
+    const timer = setInterval(() => {
+      fetch(`/api/researchers/${researcherId}/analyses/deep`)
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null)
+        .then((data: { analysis: AnalysisResponse | null } | AnalysisResponse | null) => {
+          if (cancelled || !data) return;
+          const analysis = "analysis" in data ? data.analysis : data;
+          if (analysis) setState({ kind: "result", analysis });
+        });
+    }, 2500);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [pollingState, researcherId]);
+
   async function runDeepAnalysis(confirmExtra: boolean) {
     setBusy(true);
     try {
@@ -89,6 +115,19 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
       }
       if (!res.ok) {
         const body = await res.json().catch(() => null);
+        // Another run (usually the background auto-fill) already holds this
+        // researcher's analysis slot. Don't surface an error -- switch to the
+        // in-flight record so the poller carries it to completion.
+        if (body?.error === "already_running") {
+          const data = await fetch(`/api/researchers/${researcherId}/analyses/deep`)
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null);
+          const analysis = data && ("analysis" in data ? data.analysis : data);
+          if (analysis) {
+            setState({ kind: "result", analysis });
+            return;
+          }
+        }
         setState({ kind: "error", message: analysisErrorMessage(body?.error ?? "") });
         return;
       }
