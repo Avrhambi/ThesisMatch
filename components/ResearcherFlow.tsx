@@ -7,7 +7,7 @@ import AnalysisPanel from "./AnalysisPanel";
 import PapersPanel, { type PaperRow } from "./PapersPanel";
 import EvidencePanel from "./EvidencePanel";
 import ContactTimeline from "./ContactTimeline";
-import { DECISION_LABELS } from "../lib/labels";
+import { DECISION_LABELS, VISIBLE_DECISION_STATUSES } from "../lib/labels";
 import type { DecisionStatus } from "../lib/types";
 
 type Stage = "verdict" | "publications" | "decision";
@@ -38,6 +38,13 @@ export default function ResearcherFlow({
   const [note, setNote] = useState(initialPersonalNote ?? "");
   const [skipping, setSkipping] = useState(false);
   const router = useRouter();
+
+  // Offer the six visible statuses, but keep the current one if it's a hidden
+  // legacy status so the select still shows the real value (matches the
+  // researcher list's per-row select).
+  const decisionOptions = VISIBLE_DECISION_STATUSES.includes(decision)
+    ? VISIBLE_DECISION_STATUSES
+    : [decision, ...VISIBLE_DECISION_STATUSES];
 
   async function saveDecision(next: DecisionStatus) {
     setDecision(next);
@@ -146,7 +153,7 @@ export default function ResearcherFlow({
               onChange={(e) => saveDecision(e.target.value as DecisionStatus)}
               className="rounded-[var(--radius-input)] border border-rule bg-paper px-2 py-1"
             >
-              {(Object.keys(DECISION_LABELS) as DecisionStatus[]).map((d) => (
+              {decisionOptions.map((d) => (
                 <option key={d} value={d}>
                   {DECISION_LABELS[d]}
                 </option>
