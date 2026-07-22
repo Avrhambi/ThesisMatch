@@ -3,7 +3,7 @@ import { listRecentStatusEvents } from "../../../../lib/repositories/statusEvent
 
 export const dynamic = "force-dynamic";
 
-const LIMIT = 10;
+const LIMIT = 5;
 
 export async function GET() {
   const items = await listRecentStatusEvents(LIMIT);
