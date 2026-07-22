@@ -12,10 +12,10 @@ import type { ContactEventType } from "./repositories/contactEvents";
 
 export const BRANCH_LABELS: Record<ResearchBranch, string> = {
   s3: "Software, Systems & Security (S3)",
-  software_systems_security: "Software Systems Security",
   interdisciplinary_computational_science: "Interdisciplinary Computational Science",
   theory_of_computing: "Theory of Computing",
   foundations_of_ai: "Foundations of AI",
+  applied_ai_research: "Applied AI Research",
 };
 
 export const DECISION_LABELS: Record<DecisionStatus, string> = {

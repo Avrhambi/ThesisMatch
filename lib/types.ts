@@ -3,7 +3,7 @@ export type ResearchBranch =
   | "interdisciplinary_computational_science"
   | "theory_of_computing"
   | "foundations_of_ai"
-  | "software_systems_security";
+  | "applied_ai_research";
 
 export type MatchLevel = "unknown" | "low" | "medium" | "high";
 
