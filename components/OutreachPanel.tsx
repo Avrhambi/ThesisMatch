@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ANALYSIS_STATE_LABELS, CV_RECOMMENDATION_TYPE_LABELS, DECISION_LABELS } from "../lib/labels";
+import {
+  ANALYSIS_STATE_LABELS,
+  CV_RECOMMENDATION_TYPE_LABELS,
+  DECISION_LABELS,
+  VISIBLE_DECISION_STATUSES,
+} from "../lib/labels";
 import type { AnalysisResponse, AnalysisState, CvRecommendation, DecisionStatus, ExcludedClaim, OutreachResult } from "../lib/types";
 
 type LowFitReason = "low_fit" | "supervision_unverified";
@@ -262,7 +267,7 @@ export default function OutreachPanel({ researcherId }: { researcherId: string }
               onChange={(e) => setSentDecision(e.target.value as DecisionStatus)}
               className="rounded-[var(--radius-input)] border border-rule bg-paper px-1.5 py-0.5 text-xs"
             >
-              {(Object.keys(DECISION_LABELS) as DecisionStatus[]).map((d) => (
+              {VISIBLE_DECISION_STATUSES.map((d) => (
                 <option key={d} value={d}>
                   {DECISION_LABELS[d]}
                 </option>
