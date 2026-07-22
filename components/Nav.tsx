@@ -51,7 +51,7 @@ export default function Nav() {
             href="/researchers"
             className="font-display text-lg font-semibold tracking-tight text-ink"
           >
-            ThesisMatch
+            Research Finder
           </Link>
           <div className="flex items-center gap-5">
             <UsageIndicator />
