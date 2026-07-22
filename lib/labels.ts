@@ -85,6 +85,14 @@ export const ANALYSIS_ERROR_LABELS: Record<string, string> = {
   researcher_not_found: "Researcher not found.",
   profile_missing: "Add your research profile under Profile & CV before running an analysis.",
   already_running: "This analysis is already running. Try again in a moment.",
+  // Codes surfaced by the Gemini client (lib/gemini/client.ts) when a run fails.
+  missing_api_key: "The analysis service isn't configured (no API key). Contact the maintainer.",
+  input_too_large: "This researcher's publications are too long to analyze in one pass. Remove some papers and try again.",
+  timeout: "The analysis service timed out. Try again in a moment.",
+  rate_limited: "The analysis service is rate-limited right now. Wait a minute and try again.",
+  empty_response: "The analysis service returned an empty response. Try again.",
+  invalid_json_response: "The analysis service returned a malformed response. Try again.",
+  network_error: "Couldn't reach the analysis service (network error). Try again.",
 };
 
 export function analysisErrorMessage(errorCode: string): string {

@@ -223,6 +223,12 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
         )}
       </div>
 
+      {analysis.state === "failed" && (
+        <div className="rounded-[var(--radius-card)] border border-danger/30 bg-danger-bg p-3 text-sm text-danger">
+          {analysisErrorMessage(analysis.errorCode ?? "")}
+        </div>
+      )}
+
       {review && (
         <div className="space-y-5 rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
           {/* Decision comes first: priority, supervision risk, and why -- before the descriptive summary. */}
