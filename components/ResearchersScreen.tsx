@@ -7,9 +7,10 @@ import ResearchersList from "./ResearchersList";
 import type { DecisionStatus } from "../lib/types";
 
 // Owns the decision filter so the decisions dashboard tiles and the list stay
-// in sync: clicking a status tile filters the list below it.
+// in sync: clicking a status tile filters the list below it. Defaults to
+// "new" so the list opens on the queue of newly discovered researchers.
 export default function ResearchersScreen() {
-  const [decision, setDecision] = useState<DecisionStatus | "">("");
+  const [decision, setDecision] = useState<DecisionStatus | "">("new");
   const listRef = useRef<HTMLDivElement>(null);
 
   function selectStatus(status: DecisionStatus) {

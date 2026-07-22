@@ -24,14 +24,6 @@ interface ListResponse {
   page: number;
 }
 
-interface RefreshResponse {
-  discovered: number;
-  verified: number;
-  needsReview: number;
-  unchanged: number;
-  failed: number;
-}
-
 const PAGE_SIZE = 25;
 
 const inputClass =
@@ -41,12 +33,6 @@ type ListState =
   | { kind: "loading" }
   | { kind: "error"; message: string }
   | { kind: "loaded"; data: ListResponse };
-
-type RefreshState =
-  | { kind: "idle" }
-  | { kind: "running" }
-  | { kind: "done"; result: RefreshResponse }
-  | { kind: "error" };
 
 interface ResearchersListProps {
   // The decision filter is lifted to the parent screen so the decisions
@@ -62,7 +48,6 @@ export default function ResearchersList({ decision, onDecisionChange }: Research
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [state, setState] = useState<ListState>({ kind: "loading" });
-  const [refreshState, setRefreshState] = useState<RefreshState>({ kind: "idle" });
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -117,19 +102,7 @@ export default function ResearchersList({ decision, onDecisionChange }: Research
     return () => {
       cancelled = true;
     };
-  }, [branch, decision, matchLevel, search, page, refreshState.kind]);
-
-  async function runRefresh() {
-    setRefreshState({ kind: "running" });
-    try {
-      const res = await fetch("/api/researchers/refresh", { method: "POST" });
-      if (!res.ok) throw new Error("failed");
-      const result: RefreshResponse = await res.json();
-      setRefreshState({ kind: "done", result });
-    } catch {
-      setRefreshState({ kind: "error" });
-    }
-  }
+  }, [branch, decision, matchLevel, search, page]);
 
   async function updateDecision(id: string, next: DecisionStatus) {
     if (state.kind !== "loaded") return;
@@ -161,14 +134,6 @@ export default function ResearchersList({ decision, onDecisionChange }: Research
   return (
     <div className="mx-auto max-w-6xl px-6 pb-8 pt-6">
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <button
-          onClick={runRefresh}
-          disabled={refreshState.kind === "running"}
-          className="rounded-[var(--radius-input)] bg-accent px-3.5 py-1.5 text-sm font-medium text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
-        >
-          {refreshState.kind === "running" ? "Refreshing…" : "Refresh researchers"}
-        </button>
-
         <select
           value={branch}
           onChange={(e) => applyFilter(setBranch, e.target.value as ResearchBranch | "")}
@@ -215,32 +180,6 @@ export default function ResearchersList({ decision, onDecisionChange }: Research
           className={inputClass}
         />
       </div>
-
-      {refreshState.kind === "done" && (
-        <div className="mb-6 rounded-[var(--radius-card)] border border-rule bg-paper-2 p-3 text-sm text-ink">
-          <p>
-            Found {refreshState.result.discovered} researchers · verified {refreshState.result.verified} ·
-            needs review {refreshState.result.needsReview} · unchanged {refreshState.result.unchanged}
-          </p>
-          {refreshState.result.failed > 0 && (
-            <p className="mt-1 text-warning">
-              {refreshState.result.failed} sources were unavailable; previous results were kept.{" "}
-              <button onClick={runRefresh} className="underline underline-offset-2">
-                Try again
-              </button>
-            </p>
-          )}
-        </div>
-      )}
-
-      {refreshState.kind === "error" && (
-        <div className="mb-6 rounded-[var(--radius-card)] border border-danger/30 bg-danger-bg p-3 text-sm text-danger">
-          Refresh failed.{" "}
-          <button onClick={runRefresh} className="underline underline-offset-2">
-            Try again
-          </button>
-        </div>
-      )}
 
       {state.kind === "loading" && <p className="text-sm text-muted">Loading&hellip;</p>}
 
