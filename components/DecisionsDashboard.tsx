@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { DECISION_LABELS } from "../lib/labels";
+import { DECISION_LABELS, VISIBLE_DECISION_STATUSES } from "../lib/labels";
 import type { DecisionStatus } from "../lib/types";
 
 interface RecentEvent {
@@ -14,22 +14,9 @@ interface RecentEvent {
   changedAt: string;
 }
 
-// Fixed display order: active/undecided statuses first, then outreach
-// progress, then terminal states -- mirrors the order decisionStatusSchema
-// declares them in, which the rest of the app already treats as canonical
-// (see listResearchers' ORDER BY comment).
-const STATUS_ORDER: DecisionStatus[] = [
-  "new",
-  "interested",
-  "analyze_later",
-  "not_interested",
-  "already_contacted",
-  "contact_planned",
-  "waiting_for_reply",
-  "meeting_scheduled",
-  "temporarily_unavailable",
-  "closed",
-];
+// The six statuses surfaced in the UI, in workflow order (see
+// VISIBLE_DECISION_STATUSES).
+const STATUS_ORDER: DecisionStatus[] = VISIBLE_DECISION_STATUSES;
 
 interface DecisionsDashboardProps {
   // Clicking a status tile drives the researcher list's decision filter,
@@ -65,7 +52,7 @@ export default function DecisionsDashboard({ activeStatus, onSelectStatus }: Dec
       <h2 className="mb-3 font-display text-lg font-semibold text-ink">Decisions dashboard</h2>
 
       {counts && (
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           {STATUS_ORDER.map((status) => (
             <button
               key={status}

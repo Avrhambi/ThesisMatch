@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isStale } from "../lib/discovery/stale";
-import { ANALYSIS_STATE_LABELS, BRANCH_LABELS, DECISION_LABELS, MATCH_LEVEL_LABELS } from "../lib/labels";
+import {
+  ANALYSIS_STATE_LABELS,
+  BRANCH_LABELS,
+  DECISION_LABELS,
+  MATCH_LEVEL_LABELS,
+  VISIBLE_DECISION_STATUSES,
+} from "../lib/labels";
 import type { AnalysisState, DecisionStatus, MatchLevel, ResearchBranch } from "../lib/types";
 
 interface ResearcherRow {
@@ -121,6 +127,15 @@ export default function ResearchersList({ decision, onDecisionChange }: Research
     }).catch(() => {});
   }
 
+  // The per-row status select offers the six visible statuses, but if a
+  // researcher already sits at a hidden legacy status we prepend it so the row
+  // still shows the real value and the user can leave it as-is.
+  function decisionOptionsFor(current: DecisionStatus): DecisionStatus[] {
+    return VISIBLE_DECISION_STATUSES.includes(current)
+      ? VISIBLE_DECISION_STATUSES
+      : [current, ...VISIBLE_DECISION_STATUSES];
+  }
+
   async function saveNote(id: string) {
     const draft = noteDrafts[id];
     if (draft === undefined) return;
@@ -153,7 +168,7 @@ export default function ResearchersList({ decision, onDecisionChange }: Research
           className={inputClass}
         >
           <option value="">All statuses (active)</option>
-          {(Object.keys(DECISION_LABELS) as DecisionStatus[]).map((d) => (
+          {VISIBLE_DECISION_STATUSES.map((d) => (
             <option key={d} value={d}>
               {DECISION_LABELS[d]}
             </option>
@@ -251,7 +266,7 @@ export default function ResearchersList({ decision, onDecisionChange }: Research
                     onChange={(e) => updateDecision(item.id, e.target.value as DecisionStatus)}
                     className="rounded-[var(--radius-input)] border border-rule bg-paper px-1.5 py-0.5"
                   >
-                    {(Object.keys(DECISION_LABELS) as DecisionStatus[]).map((d) => (
+                    {decisionOptionsFor(item.decision).map((d) => (
                       <option key={d} value={d}>
                         {DECISION_LABELS[d]}
                       </option>

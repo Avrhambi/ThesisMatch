@@ -31,6 +31,20 @@ export const DECISION_LABELS: Record<DecisionStatus, string> = {
   closed: "Closed",
 };
 
+// The decision_status enum has ten values for historical/data reasons, but the
+// UI only offers these six as choices (dashboard tiles, filters, per-row
+// selects). Researchers already sitting at a hidden legacy status keep it and
+// still display it -- see decisionOptionsFor in the researcher list -- so no
+// data is lost; the extra statuses are simply not offered as new choices.
+export const VISIBLE_DECISION_STATUSES: DecisionStatus[] = [
+  "new",
+  "interested",
+  "not_interested",
+  "waiting_for_reply",
+  "meeting_scheduled",
+  "closed",
+];
+
 export const MATCH_LEVEL_LABELS: Record<MatchLevel, string> = {
   unknown: "Unknown",
   low: "Low",
