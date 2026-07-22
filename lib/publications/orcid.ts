@@ -1,7 +1,7 @@
 import { fetchWithTimeout } from "../discovery/fetchWithTimeout";
 import { normalizeDoi } from "./normalizeDoi";
 
-const USER_AGENT = "ThesisMatchBot/1.0 (+personal research tool)";
+const USER_AGENT = "ResearchFinderBot/1.0 (+personal research tool)";
 
 export interface OrcidWorkSummary {
   title: string;

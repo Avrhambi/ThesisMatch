@@ -9,7 +9,7 @@ import type { StaffDepartment } from "./branchMatch";
 // no browser automation or challenge-bypass is involved.
 const TOKEN_URL = "https://www.bgu.ac.il/umbraco/api/AntiForeignApi/GetToken";
 const SEARCH_URL = "https://www.bgu.ac.il/umbraco/api/staffMembersLobbyApi/searchStaffMembers";
-const USER_AGENT = "ThesisMatchBot/1.0 (+personal research tool)";
+const USER_AGENT = "ResearchFinderBot/1.0 (+personal research tool)";
 const PAGE_NODE_ID = 107837;
 const SELECTED_STAFF_TYPES = [1, 21]; // Senior academic staff, Emeritus/Retired
 

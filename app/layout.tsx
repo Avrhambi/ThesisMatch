@@ -25,8 +25,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ThesisMatch",
-  description: "ThesisMatch",
+  title: "Research Finder",
+  description: "Research Finder",
 };
 
 export default function RootLayout({

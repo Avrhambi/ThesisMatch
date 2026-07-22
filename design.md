@@ -1,10 +1,10 @@
-# Design — ThesisMatch
+# Design — Research Finder
 
 A locked design system for this app. Every page redesign reads this file before
 emitting code. Do not regenerate per page — extend or amend this file when the
 system needs to grow.
 
-**Scope note:** ThesisMatch has no marketing pages — `app/page.tsx` redirects
+**Scope note:** Research Finder has no marketing pages — `app/page.tsx` redirects
 straight to `/researchers`. Every screen is authenticated app UI (list, detail
 tabs, modals, forms). Hallmark's marketing macrostructure/hero/footer catalog
 does not apply here; this system applies Hallmark's token discipline (OKLCH
@@ -84,7 +84,7 @@ raw pixel/rem values.
   knob (list / detail-tabs / modal) described above.
 
 ## What pages MUST share
-- The wordmark (`ThesisMatch`, Fraunces 600).
+- The wordmark (`Research Finder`, Fraunces 600).
 - The accent colour and its placement (links, primary buttons, focus rings, active states only).
 - Fraunces + IBM Plex Sans pairing, JetBrains Mono for the two outlier slots.
 - CTA voice (button shape, radius, padding rhythm) above.

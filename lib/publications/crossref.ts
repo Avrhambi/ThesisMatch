@@ -1,7 +1,7 @@
 import { fetchWithTimeout } from "../discovery/fetchWithTimeout";
 import { normalizeDoi } from "./normalizeDoi";
 
-const USER_AGENT = "ThesisMatchBot/1.0 (+personal research tool; mailto:noreply@example.invalid)";
+const USER_AGENT = "ResearchFinderBot/1.0 (+personal research tool; mailto:noreply@example.invalid)";
 const SEARCH_ROWS = 5;
 
 export interface CrossrefWork {
