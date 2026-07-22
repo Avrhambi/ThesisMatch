@@ -4,7 +4,12 @@ import { estimateTokenCount } from "./tokens";
 
 const MODEL = "gemini-3.1-flash-lite";
 const MAX_INPUT_TOKENS = 20_000;
-const MAX_OUTPUT_TOKENS = 2_000;
+// The researcher-review schema is large (summary + four fit dimensions + a
+// per-paper review for up to ~5 papers). At 2,000 tokens the model's JSON was
+// being truncated mid-object, so JSON.parse failed and the analysis surfaced
+// as invalid_json_response. 8,192 is the model's max output and leaves ample
+// headroom for the full structured response.
+const MAX_OUTPUT_TOKENS = 8_192;
 const TIMEOUT_MS = 30_000;
 
 export type GeminiOutcome<T> = { ok: true; data: T } | { ok: false; errorCode: string };
