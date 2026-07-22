@@ -37,8 +37,8 @@ describe("refreshResearchers", () => {
     // Fixture has 3 CS-faculty members (s3, theory_of_computing, applied-ai)
     // and 1 non-CS member (electrical engineering) that must be excluded.
     expect(result.discovered).toBe(3);
-    expect(result.verified).toBe(2); // s3 + theory_of_computing matched a tracked branch
-    expect(result.needsReview).toBe(1); // applied-ai has no tracked branch
+    expect(result.verified).toBe(3); // s3 + theory_of_computing + applied_ai_research all matched
+    expect(result.needsReview).toBe(0);
     expect(result.failed).toBe(0);
     expect(upsertDiscoveredResearcherOnPool).toHaveBeenCalledTimes(3);
   });

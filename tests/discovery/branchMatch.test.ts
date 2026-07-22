@@ -15,16 +15,16 @@ describe("isCsFacultyMember", () => {
 });
 
 describe("matchBranches", () => {
-  it("matches the S3 institute to both s3 and software_systems_security", () => {
-    expect(matchBranches(s3Member.departments).sort()).toEqual(["s3", "software_systems_security"]);
+  it("matches the S3 institute to the single s3 branch", () => {
+    expect(matchBranches(s3Member.departments)).toEqual(["s3"]);
   });
 
   it("matches the theory-of-computing institute to theory_of_computing", () => {
     expect(matchBranches(theoryMember.departments)).toEqual(["theory_of_computing"]);
   });
 
-  it("returns no branch for an institute outside the five tracked branches", () => {
-    expect(matchBranches(appliedAiMember.departments)).toEqual([]);
+  it("matches the Applied AI Research institute to applied_ai_research", () => {
+    expect(matchBranches(appliedAiMember.departments)).toEqual(["applied_ai_research"]);
   });
 
   it("does not false-positive on a superficially similar non-CS department", () => {

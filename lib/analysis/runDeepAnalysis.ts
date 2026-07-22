@@ -1,6 +1,7 @@
 import { getResearcherById } from "../repositories/researchers";
 import { getProfile } from "../repositories/profile";
 import { getSelectablePapersForResearcher, getPapersEvidence } from "../repositories/papers";
+import { importPublicationsForResearcher } from "../publications/import";
 import {
   findAnalysisByHash,
   getOrCreatePendingAnalysis,
@@ -15,8 +16,10 @@ import {
 import { selectPapersForAnalysis } from "./paperSelection";
 import { computeAnalysisInputHash } from "./inputHash";
 import { evaluateUsageGate } from "./dailyUsage";
-import { validateResearcherReviewEvidence, type ResearcherReview } from "./evidenceValidation";
+import { validateResearcherReviewEvidence, type GeminiResearcherReview, type ResearcherReview } from "./evidenceValidation";
 import { normalizeResearcherReview } from "./normalizeReview";
+import { detectSupervisionStatus } from "./supervisionEligibility";
+import { deriveOverallFit, derivePriority } from "./fitAssessment";
 import { localDateString } from "../time";
 import { generateStructured } from "../gemini/client";
 import { RESEARCHER_REVIEW_JSON_SCHEMA } from "../gemini/schema";
@@ -39,8 +42,18 @@ export async function runDeepAnalysis(researcherId: string, confirmExtra: boolea
   const profile = await getProfile();
   if (!profile) return { status: "error", errorCode: "profile_missing" };
 
-  const allPapers = await getSelectablePapersForResearcher(researcherId);
-  if (allPapers.length === 0) return { status: "error", errorCode: "no_papers" };
+  let allPapers = await getSelectablePapersForResearcher(researcherId);
+  if (allPapers.length === 0) {
+    // Publication import is otherwise a separate manual step (PapersPanel's
+    // "Import publications" button); run it here so Analyze works on the
+    // first click instead of failing until the user imports first.
+    const importResult = await importPublicationsForResearcher(researcherId);
+    allPapers = await getSelectablePapersForResearcher(researcherId);
+    if (allPapers.length === 0) {
+      const errorCode = importResult.source === "unavailable" ? "no_papers_unavailable" : "no_papers";
+      return { status: "error", errorCode };
+    }
+  }
 
   const selection = selectPapersForAnalysis(profile.researchProfileText, allPapers);
   const paperIds = [...selection.map((s) => s.paperId)].sort();
@@ -73,9 +86,10 @@ async function runAndPersist(
   await markAnalysisRunning(analysis.id);
 
   const evidence = await getPapersEvidence(analysis.researcherId, paperIds);
-  const prompt = buildResearcherDeepAnalysisPrompt({ profileText, researcherName, papers: evidence });
+  const supervisionStatus = detectSupervisionStatus(researcherName);
+  const prompt = buildResearcherDeepAnalysisPrompt({ profileText, researcherName, supervisionStatus, papers: evidence });
 
-  const outcome = await generateStructured<ResearcherReview>(
+  const outcome = await generateStructured<GeminiResearcherReview>(
     RESEARCHER_DEEP_ANALYSIS_SYSTEM_INSTRUCTION,
     prompt,
     RESEARCHER_REVIEW_JSON_SCHEMA,
@@ -90,11 +104,15 @@ async function runAndPersist(
   const allowedSourceIds = new Set(evidence.flatMap((paper) => paper.sources.map((s) => s.sourceId)));
   const { sanitized, claims, hasGaps } = validateResearcherReviewEvidence(normalized, allowedSourceIds);
 
+  const fit = deriveOverallFit(sanitized);
+  const priority = derivePriority(fit, sanitized.thesisDirections.length);
+  const finalReview: ResearcherReview = { ...sanitized, fit, priority, supervisionStatus };
+
   const finalState = hasGaps ? "completed_with_gaps" : "completed";
-  await completeAnalysis(analysis.id, finalState, sanitized);
+  await completeAnalysis(analysis.id, finalState, finalReview);
   await linkPapersToAnalysis(analysis.id, paperIds);
   await replaceClaimsForAnalysis(analysis.id, claims);
 
-  const updated: AnalysisRecord = { ...analysis, state: finalState, resultJson: sanitized, errorCode: null };
+  const updated: AnalysisRecord = { ...analysis, state: finalState, resultJson: finalReview, errorCode: null };
   return { status: "ran", analysis: updated };
 }

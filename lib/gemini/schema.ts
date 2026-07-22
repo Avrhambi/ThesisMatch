@@ -1,6 +1,15 @@
 const MATCH_LEVEL_ENUM = ["unknown", "low", "medium", "high"];
 const ACCESS_LEVEL_ENUM = ["metadata_only", "abstract", "full_text_open", "user_uploaded_pdf", "unavailable"];
 
+const fitAssessmentSchema = {
+  type: "object",
+  properties: {
+    level: { type: "string", enum: MATCH_LEVEL_ENUM },
+    reasoning: { type: "string" },
+  },
+  required: ["level", "reasoning"],
+};
+
 const evidenceRefSchema = {
   type: "object",
   properties: {
@@ -21,12 +30,13 @@ const paperReviewSchema = {
     question: { type: "string" },
     method: { type: "string" },
     results: { type: "string" },
+    keyConcepts: { type: "array", items: { type: "string" } },
     limitations: { type: "array", items: { type: "string" } },
     fit: { type: "string", enum: MATCH_LEVEL_ENUM },
     thesisPotential: { type: "string", enum: MATCH_LEVEL_ENUM },
     evidence: { type: "array", items: evidenceRefSchema },
   },
-  required: ["paperId", "question", "method", "results", "limitations", "fit", "thesisPotential", "evidence"],
+  required: ["paperId", "question", "method", "results", "keyConcepts", "limitations", "fit", "thesisPotential", "evidence"],
 };
 
 export const RESEARCHER_REVIEW_JSON_SCHEMA = {
@@ -39,7 +49,17 @@ export const RESEARCHER_REVIEW_JSON_SCHEMA = {
       type: "string",
       enum: ["mathematical", "algorithmic", "experimental", "mixed", "unknown"],
     },
-    fit: { type: "string", enum: MATCH_LEVEL_ENUM },
+    // overallFit/priority/supervisionStatus are NOT part of this schema --
+    // they're derived deterministically in code (lib/analysis/fitAssessment.ts,
+    // lib/analysis/supervisionEligibility.ts) from the four dimensions below,
+    // never trusted directly to the model.
+    topicFit: fitAssessmentSchema,
+    methodFit: fitAssessmentSchema,
+    mechanismFit: fitAssessmentSchema,
+    practicalFit: fitAssessmentSchema,
+    recommendationReason: { type: "string" },
+    disqualifyingFactors: { type: "array", items: { type: "string" } },
+    missingEvidence: { type: "array", items: { type: "string" } },
     matches: { type: "array", items: { type: "string" } },
     mismatches: { type: "array", items: { type: "string" } },
     thesisDirections: { type: "array", items: { type: "string" } },
@@ -50,7 +70,13 @@ export const RESEARCHER_REVIEW_JSON_SCHEMA = {
     "topics",
     "industryOrientation",
     "technicalOrientation",
-    "fit",
+    "topicFit",
+    "methodFit",
+    "mechanismFit",
+    "practicalFit",
+    "recommendationReason",
+    "disqualifyingFactors",
+    "missingEvidence",
     "matches",
     "mismatches",
     "thesisDirections",

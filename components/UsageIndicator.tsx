@@ -22,9 +22,12 @@ export default function UsageIndicator() {
   if (!usage) return null;
 
   return (
-    <span className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700" title="ניתוחים היום">
-      {usage.standardUsed} מתוך {usage.standardLimit}
-      {usage.extraUsed > 0 && <> · {usage.extraUsed} נוספים</>}
+    <span
+      className="rounded-[var(--radius-pill)] bg-paper-2 px-2.5 py-1 font-mono text-xs text-muted"
+      title="Analyses today"
+    >
+      {usage.standardUsed} of {usage.standardLimit}
+      {usage.extraUsed > 0 && <> · {usage.extraUsed} extra</>}
     </span>
   );
 }

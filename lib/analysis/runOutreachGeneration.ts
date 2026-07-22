@@ -29,16 +29,35 @@ import { OUTREACH_GENERATION_SYSTEM_INSTRUCTION, buildOutreachPrompt } from "../
 const KIND = "outreach_generation" as const;
 const MAX_BODY_LENGTH = 3000;
 
+export type LowFitReason = "low_fit" | "supervision_unverified";
+
 export type RunOutreachOutcome =
   | { status: "cached" | "ran"; analysis: AnalysisRecord; outreach: OutreachPackageRecord }
   | { status: "needs_confirmation" }
+  | { status: "needs_low_fit_confirmation"; reasons: LowFitReason[] }
   | { status: "error"; errorCode: string };
+
+// Derived from the same deep-analysis result the AnalysisPanel already
+// renders (see lib/analysis/fitAssessment.ts, supervisionEligibility.ts) --
+// re-read here rather than recomputed, since the deep analysis already
+// persisted the deterministic fit/supervisionStatus fields.
+function lowFitReasons(deepAnalysis: AnalysisRecord): LowFitReason[] {
+  const review =
+    deepAnalysis.resultJson && typeof deepAnalysis.resultJson === "object"
+      ? (deepAnalysis.resultJson as { fit?: string; supervisionStatus?: string })
+      : null;
+  const reasons: LowFitReason[] = [];
+  if (review?.fit === "low" || review?.fit === "unknown" || !review?.fit) reasons.push("low_fit");
+  if (review?.supervisionStatus === "unverified") reasons.push("supervision_unverified");
+  return reasons;
+}
 
 export async function runOutreachGeneration(
   researcherId: string,
   note: string,
   confirmExtra: boolean,
   regenerate: boolean,
+  overrideLowFit: boolean,
 ): Promise<RunOutreachOutcome> {
   const researcher = await getResearcherById(researcherId);
   if (!researcher) return { status: "error", errorCode: "researcher_not_found" };
@@ -52,6 +71,11 @@ export async function runOutreachGeneration(
   const deepAnalysis = await getLatestAnalysisForResearcher(researcherId, "researcher_deep_analysis");
   if (!deepAnalysis || (deepAnalysis.state !== "completed" && deepAnalysis.state !== "completed_with_gaps")) {
     return { status: "error", errorCode: "deep_analysis_required" };
+  }
+
+  const reasons = lowFitReasons(deepAnalysis);
+  if (reasons.length > 0 && !overrideLowFit) {
+    return { status: "needs_low_fit_confirmation", reasons };
   }
 
   await upsertResearcherNote(researcherId, note);
@@ -95,10 +119,13 @@ async function runAndPersist(
   await markAnalysisRunning(analysis.id);
 
   const evidence = await getPapersEvidence(analysis.researcherId, paperIds);
-  const researcherSummary =
+  const deepReview =
     deepAnalysis.resultJson && typeof deepAnalysis.resultJson === "object"
-      ? String((deepAnalysis.resultJson as { summary?: string }).summary ?? "")
-      : "";
+      ? (deepAnalysis.resultJson as { summary?: string; topics?: string[]; mismatches?: string[] })
+      : null;
+  const researcherSummary = deepReview?.summary ?? "";
+  const researcherTopics = deepReview?.topics ?? [];
+  const researcherMismatches = deepReview?.mismatches ?? [];
 
   const prompt = buildOutreachPrompt({
     researcherName,
@@ -106,6 +133,8 @@ async function runAndPersist(
     cvRedactedText,
     researcherNote: note,
     researcherSummary,
+    researcherTopics,
+    researcherMismatches,
     papers: evidence,
   });
 
@@ -128,20 +157,21 @@ async function runAndPersist(
 
   const normalizedRecommendations: CvRecommendation[] = outcome.data.cvRecommendations.map(normalizeCvRecommendation);
   const allowedSourceIds = new Set(evidence.flatMap((paper) => paper.sources.map((s) => s.sourceId)));
-  const { sanitized, claims, hasGaps } = validateCvRecommendationsEvidence(normalizedRecommendations, allowedSourceIds);
+  const { sanitized, dropped, claims, hasGaps } = validateCvRecommendationsEvidence(normalizedRecommendations, allowedSourceIds);
 
   const finalState = hasGaps ? "completed_with_gaps" : "completed";
   const resultJson = {
     subject: outcome.data.subject,
     body: outcome.data.body,
     cvRecommendations: sanitized,
+    droppedRecommendations: dropped,
     excludedClaims: outcome.data.excludedClaims,
   };
 
   await completeAnalysis(analysis.id, finalState, resultJson);
   await linkPapersToAnalysis(analysis.id, paperIds);
   await replaceClaimsForAnalysis(analysis.id, claims);
-  const outreach = await createOutreachPackage(analysis.id, resultJson.subject, resultJson.body, sanitized, resultJson.excludedClaims);
+  const outreach = await createOutreachPackage(analysis.id, resultJson.subject, resultJson.body, sanitized, dropped, resultJson.excludedClaims);
 
   const updated: AnalysisRecord = { ...analysis, state: finalState, resultJson, errorCode: null };
   return { status: "ran", analysis: updated, outreach };

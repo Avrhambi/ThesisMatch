@@ -11,14 +11,16 @@ export interface StaffDepartment {
 // fetchBguStaffDirectory in bguStaffSearch.ts for why it replaces CRIS.
 export const CS_FACULTY_LABEL = "Stein Faculty of Computer and Information Science";
 
-// s3 and software_systems_security are the same real-world institute
-// (confirmed by the user); both branch values map to its one department label.
+// Each branch maps to the one department-name substring the BGU staff
+// directory uses for its institute. (The former software_systems_security
+// branch was a duplicate of s3 -- same real-world institute -- and has been
+// dropped; applied_ai_research is the real fifth institute.)
 const INSTITUTE_LABELS: Record<ResearchBranch, string> = {
   s3: "Institute for Software, Systems, and Security",
-  software_systems_security: "Institute for Software, Systems, and Security",
   interdisciplinary_computational_science: "Institute for Interdisciplinary Computational Science",
   theory_of_computing: "Institute for the Theory of Computing",
   foundations_of_ai: "Institute for the Foundations of AI",
+  applied_ai_research: "Institute for Applied AI Research",
 };
 
 export function isCsFacultyMember(departments: StaffDepartment[]): boolean {

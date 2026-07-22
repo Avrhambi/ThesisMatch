@@ -8,6 +8,7 @@ export interface Researcher {
   crisUrl: string;
   decision: string;
   preliminaryMatch: string;
+  personalNote: string | null;
 }
 
 export async function getResearcherById(id: string): Promise<Researcher | null> {
@@ -17,8 +18,9 @@ export async function getResearcherById(id: string): Promise<Researcher | null> 
     cris_url: string;
     decision: string;
     preliminary_match: string;
+    personal_note: string | null;
   }>(
-    "SELECT id, full_name, cris_url, decision, preliminary_match FROM researchers WHERE id = $1",
+    "SELECT id, full_name, cris_url, decision, preliminary_match, personal_note FROM researchers WHERE id = $1",
     [id],
   );
 
@@ -31,6 +33,7 @@ export async function getResearcherById(id: string): Promise<Researcher | null> 
     crisUrl: row.cris_url,
     decision: row.decision,
     preliminaryMatch: row.preliminary_match,
+    personalNote: row.personal_note,
   };
 }
 
@@ -150,6 +153,7 @@ export interface ResearcherListItem {
   personalNote: string | null;
   discoveredAt: string;
   refreshedAt: string | null;
+  analysisState: AnalysisState;
 }
 
 export interface ListResearchersFilters {
@@ -161,12 +165,6 @@ export interface ListResearchersFilters {
 }
 
 const PAGE_SIZE = 25;
-
-// No analyses table rows exist for any researcher yet (that logic ships in
-// Milestone 5), so every researcher's analysis state is currently
-// "not_analyzed" by definition. The filter is UI-only until then; see
-// app/api/researchers/route.ts.
-export const CURRENT_ANALYSIS_STATE: AnalysisState = "not_analyzed";
 
 export async function listResearchers(
   filters: ListResearchersFilters,
@@ -218,13 +216,20 @@ export async function listResearchers(
     discovered_at: string;
     refreshed_at: string | null;
     branches: string[] | null;
+    analysis_state: AnalysisState | null;
   }>(
     `SELECT r.id, r.full_name, r.decision, r.preliminary_match, r.personal_note, r.discovered_at, r.refreshed_at,
-            array_agg(rb.branch::text) FILTER (WHERE rb.verified) AS branches
+            array_agg(rb.branch::text) FILTER (WHERE rb.verified) AS branches,
+            la.state AS analysis_state
      FROM researchers r
      LEFT JOIN researcher_branches rb ON rb.researcher_id = r.id
+     LEFT JOIN LATERAL (
+       SELECT state FROM analyses
+       WHERE researcher_id = r.id AND kind = 'researcher_deep_analysis'
+       ORDER BY created_at DESC LIMIT 1
+     ) la ON true
      ${whereClause}
-     GROUP BY r.id
+     GROUP BY r.id, la.state
      ORDER BY r.decision ASC, r.preliminary_match DESC, r.full_name ASC
      LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}`,
     [...params, PAGE_SIZE, offset],
@@ -245,9 +250,22 @@ export async function listResearchers(
       personalNote: row.personal_note,
       discoveredAt: row.discovered_at,
       refreshedAt: row.refreshed_at,
+      analysisState: row.analysis_state ?? "not_analyzed",
     })),
     total: Number(countRows[0]?.count ?? 0),
   };
+}
+
+// Powers the decisions dashboard's stat tiles: how many researchers sit at
+// each personal status right now, across the whole set (not paginated,
+// unlike listResearchers).
+export async function countResearchersByDecision(): Promise<Record<DecisionStatus, number>> {
+  const { rows } = await query<{ decision: DecisionStatus; count: string }>(
+    "SELECT decision, count(*)::text AS count FROM researchers GROUP BY decision",
+  );
+  const counts = {} as Record<DecisionStatus, number>;
+  for (const row of rows) counts[row.decision] = Number(row.count);
+  return counts;
 }
 
 export interface UpdateResearcherFields {
@@ -259,7 +277,11 @@ export async function updateResearcher(id: string, updates: UpdateResearcherFiel
   const sets: string[] = [];
   const params: unknown[] = [];
 
+  let priorDecision: DecisionStatus | null = null;
   if (updates.decision !== undefined) {
+    const { rows } = await query<{ decision: DecisionStatus }>("SELECT decision FROM researchers WHERE id = $1", [id]);
+    priorDecision = rows[0]?.decision ?? null;
+
     params.push(updates.decision);
     sets.push(`decision = $${params.length}`);
   }
@@ -271,6 +293,13 @@ export async function updateResearcher(id: string, updates: UpdateResearcherFiel
 
   params.push(id);
   await query(`UPDATE researchers SET ${sets.join(", ")} WHERE id = $${params.length}`, params);
+
+  if (updates.decision !== undefined && updates.decision !== priorDecision) {
+    await query(
+      "INSERT INTO researcher_status_events (id, researcher_id, old_decision, new_decision, changed_at) VALUES ($1, $2, $3, $4, now())",
+      [randomUUID(), id, priorDecision, updates.decision],
+    );
+  }
 
   const eventType = updates.decision ? contactEventTypeForDecision(updates.decision) : null;
   if (eventType) {

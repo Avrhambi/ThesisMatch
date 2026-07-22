@@ -2,20 +2,30 @@ import { NextResponse } from "next/server";
 import { addPapersRequestSchema } from "../../../../../../lib/validation/analysis";
 import { runAdditionalPapersAnalysis } from "../../../../../../lib/analysis/runAdditionalPapersAnalysis";
 import { listCompletedAnalysesForResearcher } from "../../../../../../lib/repositories/analyses";
+import { enrichPaperReviews } from "../../../../../../lib/analysis/enrichPaperReviews";
 
 export const dynamic = "force-dynamic";
 
+interface PaperReviewShape {
+  paperId: string;
+  [key: string]: unknown;
+}
+
 // Every completed additional_papers_analysis batch, flattened to its paper
 // reviews, so the UI can append them to the deep-analysis review (SPEC:
-// "appends results to the existing review").
+// "appends results to the existing review"). Enriched with title/year/venue
+// the same way the deep-analysis route is (lib/analysis/enrichPaperReviews.ts);
+// selectionReason is always "user_added" here since these were pasted in by
+// the user rather than auto-selected.
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const batches = await listCompletedAnalysesForResearcher(id, "additional_papers_analysis");
   const papers = batches.flatMap((batch) => {
-    const result = batch.resultJson as { papers?: unknown[] } | null;
+    const result = batch.resultJson as { papers?: PaperReviewShape[] } | null;
     return Array.isArray(result?.papers) ? result.papers : [];
   });
-  return NextResponse.json({ papers });
+  const enriched = await enrichPaperReviews(id, papers);
+  return NextResponse.json({ papers: enriched.map((paper) => ({ ...paper, selectionReason: "user_added" })) });
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {

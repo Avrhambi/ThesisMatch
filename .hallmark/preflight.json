@@ -1,0 +1,9 @@
+{
+  "scannedAt": "2026-07-20",
+  "fontStack": "none (pre-redesign: no next/font, no Google Fonts link)",
+  "palette": "app/globals.css :root — --background #ffffff, --foreground #171717 (plain, no OKLCH)",
+  "motion": "none — no motion library in package.json",
+  "spacing": "raw Tailwind utility scale, no named tokens",
+  "framework": "Next.js 16 (app router), Tailwind v4 (CSS-first, @tailwindcss/postcss, no tailwind.config file)",
+  "notes": "No design.md existed before this run. No marketing pages — app/page.tsx redirects to /researchers. Whole app was Hebrew/RTL (html lang=he dir=rtl)."
+}

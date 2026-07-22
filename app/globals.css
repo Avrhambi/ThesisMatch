@@ -1,11 +1,71 @@
 @import "tailwindcss";
+@import "../tokens.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme inline {
+  --color-paper: var(--color-paper);
+  --color-paper-2: var(--color-paper-2);
+  --color-rule: var(--color-rule);
+  --color-neutral: var(--color-neutral);
+  --color-muted: var(--color-muted);
+  --color-ink: var(--color-ink);
+  --color-accent: var(--color-accent);
+  --color-accent-ink: var(--color-accent-ink);
+  --color-focus: var(--color-focus);
+  --color-success: var(--color-success);
+  --color-success-bg: var(--color-success-bg);
+  --color-warning: var(--color-warning);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-danger: var(--color-danger);
+  --color-danger-bg: var(--color-danger-bg);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-base: var(--text-base);
+  --text-md: var(--text-md);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --text-3xl: var(--text-3xl);
+
+  --spacing-3xs: var(--spacing-3xs);
+  --spacing-2xs: var(--spacing-2xs);
+  --spacing-xs: var(--spacing-xs);
+  --spacing-sm: var(--spacing-sm);
+  --spacing-md: var(--spacing-md);
+  --spacing-lg: var(--spacing-lg);
+  --spacing-xl: var(--spacing-xl);
+  --spacing-2xl: var(--spacing-2xl);
+
+  --radius-card: var(--radius-card);
+  --radius-input: var(--radius-input);
+  --radius-pill: var(--radius-pill);
+
+  --ease-out: var(--ease-out);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

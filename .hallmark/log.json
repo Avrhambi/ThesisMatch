@@ -1,0 +1,12 @@
+[
+  {
+    "date": "2026-07-20",
+    "scope": "app",
+    "macrostructure": "App Shell (custom, non-marketing)",
+    "theme": "custom",
+    "theme_axes": "light / roman-serif+grotesk-body / cool-blue",
+    "vibe": "editorial research CRM, no marketing pages",
+    "enrichment": "none",
+    "brief": "ThesisMatch · redesign whole app to English/LTR + editorial design system, applied to app UI (nav, list, tabs, panels, forms) via design.md"
+  }
+]

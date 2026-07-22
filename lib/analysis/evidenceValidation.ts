@@ -1,4 +1,4 @@
-import type { AccessLevel, MatchLevel } from "../types";
+import type { AccessLevel, FitAssessment, MatchLevel, Priority, SupervisionStatus } from "../types";
 
 export interface EvidenceRef {
   sourceId: string;
@@ -11,22 +11,41 @@ export interface PaperReview {
   question: string | null;
   method: string | null;
   results: string | null;
+  keyConcepts: string[];
   limitations: string[];
   fit: MatchLevel;
   thesisPotential: MatchLevel;
   evidence: EvidenceRef[];
 }
 
-export interface ResearcherReview {
+// What Gemini actually produces, matching RESEARCHER_REVIEW_JSON_SCHEMA.
+export interface GeminiResearcherReview {
   summary: string;
   topics: string[];
   industryOrientation: MatchLevel | "unknown";
   technicalOrientation: "mathematical" | "algorithmic" | "experimental" | "mixed" | "unknown";
-  fit: MatchLevel;
+  topicFit: FitAssessment;
+  methodFit: FitAssessment;
+  mechanismFit: FitAssessment;
+  practicalFit: FitAssessment;
+  recommendationReason: string;
+  disqualifyingFactors: string[];
+  missingEvidence: string[];
   matches: string[];
   mismatches: string[];
   thesisDirections: string[];
   papers: PaperReview[];
+}
+
+// The full stored/displayed shape: Gemini's output plus overallFit/priority/
+// supervisionStatus, which are always derived deterministically in code
+// (see lib/analysis/fitAssessment.ts, lib/analysis/supervisionEligibility.ts)
+// and merged in after evidence validation -- never requested from or trusted
+// to the model.
+export interface ResearcherReview extends GeminiResearcherReview {
+  fit: MatchLevel;
+  priority: Priority;
+  supervisionStatus: SupervisionStatus;
 }
 
 export type ClaimStatus = "verified" | "inferred" | "conflicting" | "missing";
@@ -39,7 +58,7 @@ export interface ClaimToPersist {
 }
 
 export interface EvidenceValidationResult {
-  sanitized: ResearcherReview;
+  sanitized: GeminiResearcherReview;
   claims: ClaimToPersist[];
   hasGaps: boolean;
 }
@@ -89,7 +108,7 @@ export function validatePaperReviewsEvidence(
 }
 
 export function validateResearcherReviewEvidence(
-  review: ResearcherReview,
+  review: GeminiResearcherReview,
   allowedSourceIds: ReadonlySet<string>,
 ): EvidenceValidationResult {
   const { sanitizedPapers, claims, hasGaps } = validatePaperReviewsEvidence(review.papers, allowedSourceIds);
@@ -118,6 +137,7 @@ export interface ExcludedClaim {
 
 export interface CvRecommendationsValidationResult {
   sanitized: CvRecommendation[];
+  dropped: string[];
   claims: ClaimToPersist[];
   hasGaps: boolean;
 }
@@ -126,27 +146,40 @@ export interface CvRecommendationsValidationResult {
 // evidenceId citing a sourceId outside the set actually fed to the model is
 // stripped. "missing_evidence" recommendations are exempt from the
 // verified/missing distinction since they exist precisely to flag a gap.
+// Any other recommendation left with zero surviving evidence after
+// stripping is dropped entirely rather than displayed as "0 sources" --
+// a CV recommendation with no evidence backing it is not useful for a
+// decision, per the same evidence-required rule paper reviews already
+// enforce.
 export function validateCvRecommendationsEvidence(
   recommendations: CvRecommendation[],
   allowedSourceIds: ReadonlySet<string>,
 ): CvRecommendationsValidationResult {
   let hasGaps = false;
   const claims: ClaimToPersist[] = [];
+  const dropped: string[] = [];
 
-  const sanitized = recommendations.map((rec) => {
+  const sanitized: CvRecommendation[] = [];
+
+  for (const rec of recommendations) {
     const validIds = rec.evidenceIds.filter((id) => allowedSourceIds.has(id));
     if (validIds.length !== rec.evidenceIds.length) hasGaps = true;
 
     if (rec.type === "missing_evidence") {
       claims.push({ claimType: `cv_recommendation_${rec.type}`, value: rec.suggestedText ?? rec.reason, status: "missing", evidenceSourceIds: validIds });
-    } else {
-      const status: ClaimStatus = validIds.length > 0 ? "verified" : "missing";
-      if (status === "missing") hasGaps = true;
-      claims.push({ claimType: `cv_recommendation_${rec.type}`, value: rec.suggestedText ?? rec.reason, status, evidenceSourceIds: validIds });
+      sanitized.push({ ...rec, evidenceIds: validIds });
+      continue;
     }
 
-    return { ...rec, evidenceIds: validIds };
-  });
+    if (validIds.length === 0) {
+      hasGaps = true;
+      dropped.push(rec.reason || rec.section);
+      continue;
+    }
 
-  return { sanitized, claims, hasGaps };
+    claims.push({ claimType: `cv_recommendation_${rec.type}`, value: rec.suggestedText ?? rec.reason, status: "verified", evidenceSourceIds: validIds });
+    sanitized.push({ ...rec, evidenceIds: validIds });
+  }
+
+  return { sanitized, dropped, claims, hasGaps };
 }

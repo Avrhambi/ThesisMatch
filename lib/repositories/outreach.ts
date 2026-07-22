@@ -9,6 +9,7 @@ export interface OutreachPackageRecord {
   subject: string;
   body: string;
   cvRecommendations: CvRecommendation[];
+  droppedRecommendations: string[];
   excludedClaims: ExcludedClaim[];
   copiedAt: string | null;
   sentAt: string | null;
@@ -20,6 +21,7 @@ function mapRow(row: {
   subject: string;
   body: string;
   cv_recommendations: CvRecommendation[];
+  dropped_recommendations: string[];
   excluded_claims: ExcludedClaim[];
   copied_at: string | null;
   sent_at: string | null;
@@ -30,6 +32,7 @@ function mapRow(row: {
     subject: row.subject,
     body: row.body,
     cvRecommendations: row.cv_recommendations,
+    droppedRecommendations: row.dropped_recommendations,
     excludedClaims: row.excluded_claims,
     copiedAt: row.copied_at,
     sentAt: row.sent_at,
@@ -42,11 +45,16 @@ const SELECT_COLUMNS = "id, analysis_id, subject, body, cv_recommendations, excl
 // reset to pending and re-run with the same analysis id (see
 // getOrCreatePendingAnalysis), so a prior partial outreach_packages row for
 // that id, if any, is overwritten rather than duplicated.
+// droppedRecommendations isn't stored on outreach_packages (it already lives
+// in analyses.result_json, written by completeAnalysis just before this
+// call) -- passed through here only to build an accurate in-memory return
+// value, not persisted a second time.
 export async function createOutreachPackage(
   analysisId: string,
   subject: string,
   body: string,
   cvRecommendations: CvRecommendation[],
+  droppedRecommendations: string[],
   excludedClaims: ExcludedClaim[],
 ): Promise<OutreachPackageRecord> {
   const { rows } = await query<{
@@ -67,9 +75,11 @@ export async function createOutreachPackage(
      RETURNING ${SELECT_COLUMNS}`,
     [randomUUID(), analysisId, subject, body, JSON.stringify(cvRecommendations), JSON.stringify(excludedClaims)],
   );
-  return mapRow(rows[0]);
+  return mapRow({ ...rows[0], dropped_recommendations: droppedRecommendations });
 }
 
+// Reads droppedRecommendations back out of analyses.result_json via a join,
+// since it isn't a column on outreach_packages itself.
 export async function getOutreachPackageByAnalysisId(analysisId: string): Promise<OutreachPackageRecord | null> {
   const { rows } = await query<{
     id: string;
@@ -80,9 +90,16 @@ export async function getOutreachPackageByAnalysisId(analysisId: string): Promis
     excluded_claims: ExcludedClaim[];
     copied_at: string | null;
     sent_at: string | null;
-  }>(`SELECT ${SELECT_COLUMNS} FROM outreach_packages WHERE analysis_id = $1`, [analysisId]);
+    result_json: { droppedRecommendations?: string[] } | null;
+  }>(
+    `SELECT op.id, op.analysis_id, op.subject, op.body, op.cv_recommendations, op.excluded_claims, op.copied_at, op.sent_at, a.result_json
+     FROM outreach_packages op JOIN analyses a ON a.id = op.analysis_id
+     WHERE op.analysis_id = $1`,
+    [analysisId],
+  );
   const row = rows[0];
-  return row ? mapRow(row) : null;
+  if (!row) return null;
+  return mapRow({ ...row, dropped_recommendations: row.result_json?.droppedRecommendations ?? [] });
 }
 
 export interface LatestOutreach {
@@ -99,6 +116,7 @@ export async function getLatestOutreachForResearcher(researcherId: string): Prom
     state: AnalysisState;
     error_code: string | null;
     is_extra: boolean;
+    result_json: { droppedRecommendations?: string[] } | null;
     outreach_id: string | null;
     outreach_analysis_id: string | null;
     subject: string | null;
@@ -108,7 +126,7 @@ export async function getLatestOutreachForResearcher(researcherId: string): Prom
     copied_at: string | null;
     sent_at: string | null;
   }>(
-    `SELECT a.id, a.state, a.error_code, a.is_extra,
+    `SELECT a.id, a.state, a.error_code, a.is_extra, a.result_json,
             op.id AS outreach_id, op.analysis_id AS outreach_analysis_id, op.subject, op.body,
             op.cv_recommendations, op.excluded_claims, op.copied_at, op.sent_at
      FROM analyses a
@@ -133,6 +151,7 @@ export async function getLatestOutreachForResearcher(researcherId: string): Prom
             subject: row.subject ?? "",
             body: row.body ?? "",
             cv_recommendations: row.cv_recommendations ?? [],
+            dropped_recommendations: row.result_json?.droppedRecommendations ?? [],
             excluded_claims: row.excluded_claims ?? [],
             copied_at: row.copied_at,
             sent_at: row.sent_at,

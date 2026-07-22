@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { query } from "../db";
-import type { AnalysisKind, AnalysisState } from "../types";
+import type { AnalysisKind, AnalysisState, MatchLevel } from "../types";
 import type { ClaimToPersist } from "../analysis/evidenceValidation";
 
 export interface AnalysisRecord {
@@ -199,6 +199,71 @@ export async function replaceClaimsForAnalysis(analysisId: string, claims: Claim
       [randomUUID(), analysisId, claim.claimType, claim.value, claim.status, claim.evidenceSourceIds],
     );
   }
+}
+
+export interface ReadyForReviewItem {
+  id: string;
+  fullName: string;
+  preliminaryMatch: MatchLevel;
+  completedAt: string;
+}
+
+// "Ready for review" = a completed deep analysis exists AND the researcher
+// is still at the default "New" status -- once the user sets any other
+// status they've effectively reviewed it, so it drops out of this list.
+export async function listReadyForReviewResearchers(): Promise<ReadyForReviewItem[]> {
+  const { rows } = await query<{
+    id: string;
+    full_name: string;
+    preliminary_match: MatchLevel;
+    completed_at: string;
+  }>(
+    `SELECT r.id, r.full_name, r.preliminary_match, a.completed_at
+     FROM researchers r
+     JOIN LATERAL (
+       SELECT completed_at FROM analyses
+       WHERE researcher_id = r.id AND kind = 'researcher_deep_analysis' AND state IN ('completed', 'completed_with_gaps')
+       ORDER BY completed_at DESC LIMIT 1
+     ) a ON true
+     WHERE r.decision = 'new'
+     ORDER BY a.completed_at DESC`,
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    fullName: row.full_name,
+    preliminaryMatch: row.preliminary_match,
+    completedAt: row.completed_at,
+  }));
+}
+
+export interface AnalysisCandidate {
+  id: string;
+  fullName: string;
+}
+
+// Highest preliminary-match researcher with no completed deep analysis yet,
+// excluding ones already marked not_interested/closed. Used by "Ask for
+// another review" and the ready-for-review auto-fill to pick the next
+// researcher to analyze. `excludeIds` lets a caller skip candidates it
+// already tried and failed on in the current session -- a failed attempt
+// doesn't count as "completed", so without this the same failing candidate
+// (e.g. no importable publications) would be picked again indefinitely.
+export async function findNextAnalysisCandidate(excludeIds: string[] = []): Promise<AnalysisCandidate | null> {
+  const { rows } = await query<{ id: string; full_name: string }>(
+    `SELECT r.id, r.full_name
+     FROM researchers r
+     WHERE r.decision NOT IN ('not_interested', 'closed')
+       AND NOT (r.id = ANY($1::uuid[]))
+       AND NOT EXISTS (
+         SELECT 1 FROM analyses a
+         WHERE a.researcher_id = r.id AND a.kind = 'researcher_deep_analysis' AND a.state IN ('completed', 'completed_with_gaps')
+       )
+     ORDER BY r.preliminary_match DESC, r.discovered_at ASC
+     LIMIT 1`,
+    [excludeIds],
+  );
+  const row = rows[0];
+  return row ? { id: row.id, fullName: row.full_name } : null;
 }
 
 export interface DailyUsageCounts {

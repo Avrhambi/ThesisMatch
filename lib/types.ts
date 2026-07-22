@@ -3,9 +3,25 @@ export type ResearchBranch =
   | "interdisciplinary_computational_science"
   | "theory_of_computing"
   | "foundations_of_ai"
-  | "software_systems_security";
+  | "applied_ai_research";
 
 export type MatchLevel = "unknown" | "low" | "medium" | "high";
+
+// "unverified" means a disqualifying signal (e.g. Emeritus) was found in the
+// researcher's name; "verified_available" means none was found -- it is not
+// a positive confirmation of active supervision, just the absence of a known
+// red flag, since the app has no way to confirm active availability either way.
+export type SupervisionStatus = "unverified" | "verified_available";
+
+export interface FitAssessment {
+  level: MatchLevel;
+  reasoning: string;
+}
+
+// Derived deterministically in code from the four fit dimensions + whether
+// any concrete thesis direction was found -- never trusted directly to the
+// LLM (see lib/analysis/fitAssessment.ts).
+export type Priority = "high_priority" | "consider" | "low_priority" | "do_not_prioritize";
 
 export type AccessLevel =
   | "metadata_only"
@@ -119,6 +135,7 @@ export interface OutreachResult {
   subject: string;
   body: string;
   cvRecommendations: CvRecommendation[];
+  droppedRecommendations: string[];
   excludedClaims: ExcludedClaim[];
 }
 

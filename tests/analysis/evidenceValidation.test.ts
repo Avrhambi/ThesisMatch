@@ -4,8 +4,8 @@ import {
   validatePaperReviewsEvidence,
   validateResearcherReviewEvidence,
   type CvRecommendation,
+  type GeminiResearcherReview,
   type PaperReview,
-  type ResearcherReview,
 } from "../../lib/analysis/evidenceValidation";
 
 function makePaperReview(overrides: Partial<PaperReview> = {}): PaperReview {
@@ -14,6 +14,7 @@ function makePaperReview(overrides: Partial<PaperReview> = {}): PaperReview {
     question: "What is the research question?",
     method: "A method",
     results: "Some results",
+    keyConcepts: [],
     limitations: [],
     fit: "high",
     thesisPotential: "high",
@@ -65,12 +66,18 @@ describe("validatePaperReviewsEvidence", () => {
 
 describe("validateResearcherReviewEvidence", () => {
   it("sanitizes every paper review inside the researcher review", () => {
-    const review: ResearcherReview = {
+    const review: GeminiResearcherReview = {
       summary: "summary",
       topics: [],
       industryOrientation: "unknown",
       technicalOrientation: "unknown",
-      fit: "medium",
+      topicFit: { level: "medium", reasoning: "test" },
+      methodFit: { level: "medium", reasoning: "test" },
+      mechanismFit: { level: "medium", reasoning: "test" },
+      practicalFit: { level: "medium", reasoning: "test" },
+      recommendationReason: "test",
+      disqualifyingFactors: [],
+      missingEvidence: [],
       matches: [],
       mismatches: [],
       thesisDirections: [],
@@ -105,21 +112,24 @@ describe("validateCvRecommendationsEvidence", () => {
     expect(claims[0].status).toBe("verified");
   });
 
-  it("strips an evidenceId outside the allowed set and flags a gap", () => {
-    const { sanitized, hasGaps } = validateCvRecommendationsEvidence(
+  it("drops a non-missing_evidence recommendation left with no surviving evidence, and flags a gap", () => {
+    const { sanitized, dropped, claims, hasGaps } = validateCvRecommendationsEvidence(
       [makeCvRecommendation({ evidenceIds: ["not-allowed"] })],
       new Set(["source-1"]),
     );
-    expect(sanitized[0].evidenceIds).toHaveLength(0);
+    expect(sanitized).toHaveLength(0);
+    expect(dropped).toHaveLength(1);
+    expect(claims).toHaveLength(0);
     expect(hasGaps).toBe(true);
   });
 
-  it("marks a non-missing_evidence recommendation with no surviving evidence as missing and flags a gap", () => {
-    const { claims, hasGaps } = validateCvRecommendationsEvidence(
+  it("drops a non-missing_evidence recommendation given no evidence at all, and flags a gap", () => {
+    const { sanitized, dropped, hasGaps } = validateCvRecommendationsEvidence(
       [makeCvRecommendation({ evidenceIds: [] })],
       new Set(["source-1"]),
     );
-    expect(claims[0].status).toBe("missing");
+    expect(sanitized).toHaveLength(0);
+    expect(dropped).toHaveLength(1);
     expect(hasGaps).toBe(true);
   });
 

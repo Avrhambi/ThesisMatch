@@ -35,7 +35,7 @@ export default function Nav() {
         cv: cvData.cv,
       });
     } catch {
-      setModal({ kind: "error", message: "טעינת הפרופיל נכשלה" });
+      setModal({ kind: "error", message: "Failed to load your profile" });
     }
   }
 
@@ -45,50 +45,56 @@ export default function Nav() {
 
   return (
     <>
-      <header className="border-b border-gray-200 px-4 py-3">
-        <nav className="flex items-center justify-between" dir="rtl">
-          <Link href="/researchers" className="text-lg font-semibold">
+      <header className="border-b border-rule bg-paper px-6 py-4">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between">
+          <Link
+            href="/researchers"
+            className="font-display text-lg font-semibold tracking-tight text-ink"
+          >
             ThesisMatch
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <UsageIndicator />
-            <Link href="/researchers" className="text-sm hover:underline">
-              חוקרים
+            <Link
+              href="/researchers"
+              className="text-sm text-ink underline decoration-rule decoration-1 underline-offset-4 transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:decoration-accent hover:text-accent"
+            >
+              Researchers
             </Link>
             <button
               onClick={openProfile}
-              className="rounded bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200"
+              className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-sm text-ink transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:border-accent hover:text-accent disabled:opacity-50"
             >
-              פרופיל וקורות חיים
+              Profile &amp; CV
             </button>
           </div>
         </nav>
       </header>
 
       {modal.kind === "loading" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="rounded-lg bg-white p-6 text-sm text-gray-600 shadow-lg" dir="rtl">
-            טוען...
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
+          <div className="rounded-[var(--radius-card)] border border-rule bg-paper p-6 text-sm text-muted shadow-lg">
+            Loading&hellip;
           </div>
         </div>
       )}
 
       {modal.kind === "error" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm space-y-3 rounded-lg bg-white p-6 shadow-lg" dir="rtl">
-            <p className="text-sm text-red-600">{modal.message}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
+          <div className="w-full max-w-sm space-y-3 rounded-[var(--radius-card)] border border-rule bg-paper p-6 shadow-lg">
+            <p className="text-sm text-danger">{modal.message}</p>
             <div className="flex gap-2">
               <button
                 onClick={openProfile}
-                className="rounded bg-gray-800 px-3 py-1 text-sm text-white hover:bg-gray-700"
+                className="rounded-[var(--radius-input)] bg-accent px-3 py-1.5 text-sm text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90"
               >
-                ניסיון נוסף
+                Try again
               </button>
               <button
                 onClick={closeModal}
-                className="rounded bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200"
+                className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-sm text-ink transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:border-accent"
               >
-                סגירה
+                Close
               </button>
             </div>
           </div>

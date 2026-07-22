@@ -1,18 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ANALYSIS_STATE_LABELS, MATCH_LEVEL_LABELS } from "../lib/labels";
-import type { AnalysisResponse, AnalysisState } from "../lib/types";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  ANALYSIS_STATE_LABELS,
+  FIT_DIMENSION_LABELS,
+  MATCH_LEVEL_LABELS,
+  PRIORITY_LABELS,
+  SUPERVISION_STATUS_LABELS,
+  analysisErrorMessage,
+} from "../lib/labels";
+import type { AccessLevel, AnalysisResponse, AnalysisState, FitAssessment, MatchLevel, Priority, SupervisionStatus } from "../lib/types";
 
-interface PaperReview {
+export interface PaperReview {
   paperId: string;
   question: string | null;
   method: string | null;
   results: string | null;
+  keyConcepts: string[];
   limitations: string[];
   fit: string;
   thesisPotential: string;
   evidence: { sourceId: string; label: string; access: string }[];
+  title: string | null;
+  publicationYear: number | null;
+  venue: string | null;
+  access: AccessLevel | null;
+  selectionReason: string | null;
+  sources: { sourceId: string; type: string; url: string; access: AccessLevel }[];
 }
 
 interface ResearcherReview {
@@ -20,7 +35,16 @@ interface ResearcherReview {
   topics: string[];
   industryOrientation: string;
   technicalOrientation: string;
-  fit: string;
+  topicFit: FitAssessment;
+  methodFit: FitAssessment;
+  mechanismFit: FitAssessment;
+  practicalFit: FitAssessment;
+  fit: MatchLevel;
+  priority: Priority;
+  supervisionStatus: SupervisionStatus;
+  recommendationReason: string;
+  disqualifyingFactors: string[];
+  missingEvidence: string[];
   matches: string[];
   mismatches: string[];
   thesisDirections: string[];
@@ -30,36 +54,52 @@ interface ResearcherReview {
 type PanelState =
   | { kind: "loading" }
   | { kind: "empty" }
-  | { kind: "confirm_extra"; action: "deep" | "additional" }
+  | { kind: "confirm_extra" }
   | { kind: "error"; message: string }
   | { kind: "result"; analysis: AnalysisResponse };
 
-async function fetchAdditionalPapers(researcherId: string): Promise<PaperReview[]> {
-  const res = await fetch(`/api/researchers/${researcherId}/analyses/additional`).catch(() => null);
-  if (!res?.ok) return [];
-  const body: { papers: PaperReview[] } = await res.json();
-  return body.papers ?? [];
-}
-
 export default function AnalysisPanel({ researcherId }: { researcherId: string }) {
   const [state, setState] = useState<PanelState>({ kind: "loading" });
-  const [additionalPapers, setAdditionalPapers] = useState<PaperReview[]>([]);
-  const [titlesInput, setTitlesInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const searchParams = useSearchParams();
+  const autoAnalyzeTriggered = useRef(false);
 
   useEffect(() => {
-    Promise.all([
+    fetch(`/api/researchers/${researcherId}/analyses/deep`)
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null)
+      .then((data: { analysis: AnalysisResponse | null } | AnalysisResponse | null) => {
+        if (!data) return setState({ kind: "empty" });
+        const analysis = "analysis" in data ? data.analysis : data;
+        setState(analysis ? { kind: "result", analysis } : { kind: "empty" });
+      });
+  }, [researcherId]);
+
+  // A deep analysis can be in flight without this panel having started it --
+  // the background auto-fill scheduler (readyForReviewScheduler) creates
+  // pending/running rows too. Without polling, the panel would show a frozen
+  // "Analyzing…" and the user would have to refresh the page repeatedly to see
+  // the finished result. Poll until the row reaches a terminal state.
+  const pollingAnalysis = state.kind === "result" ? state.analysis : null;
+  const pollingState = pollingAnalysis?.state;
+  useEffect(() => {
+    if (pollingState !== "pending" && pollingState !== "running") return;
+    let cancelled = false;
+    const timer = setInterval(() => {
       fetch(`/api/researchers/${researcherId}/analyses/deep`)
         .then((res) => (res.ok ? res.json() : null))
-        .catch(() => null) as Promise<{ analysis: AnalysisResponse | null } | AnalysisResponse | null>,
-      fetchAdditionalPapers(researcherId),
-    ]).then(([data, additional]) => {
-      setAdditionalPapers(additional);
-      if (!data) return setState({ kind: "empty" });
-      const analysis = "analysis" in data ? data.analysis : data;
-      setState(analysis ? { kind: "result", analysis } : { kind: "empty" });
-    });
-  }, [researcherId]);
+        .catch(() => null)
+        .then((data: { analysis: AnalysisResponse | null } | AnalysisResponse | null) => {
+          if (cancelled || !data) return;
+          const analysis = "analysis" in data ? data.analysis : data;
+          if (analysis) setState({ kind: "result", analysis });
+        });
+    }, 2500);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [pollingState, researcherId]);
 
   async function runDeepAnalysis(confirmExtra: boolean) {
     setBusy(true);
@@ -70,76 +110,69 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
         body: JSON.stringify({ confirmExtra }),
       });
       if (res.status === 409) {
-        setState({ kind: "confirm_extra", action: "deep" });
+        setState({ kind: "confirm_extra" });
         return;
       }
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        setState({ kind: "error", message: body?.error ?? "הניתוח נכשל" });
+        // Another run (usually the background auto-fill) already holds this
+        // researcher's analysis slot. Don't surface an error -- switch to the
+        // in-flight record so the poller carries it to completion.
+        if (body?.error === "already_running") {
+          const data = await fetch(`/api/researchers/${researcherId}/analyses/deep`)
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null);
+          const analysis = data && ("analysis" in data ? data.analysis : data);
+          if (analysis) {
+            setState({ kind: "result", analysis });
+            return;
+          }
+        }
+        setState({ kind: "error", message: analysisErrorMessage(body?.error ?? "") });
         return;
       }
       const analysis: AnalysisResponse = await res.json();
       setState({ kind: "result", analysis });
     } catch {
-      setState({ kind: "error", message: "הניתוח נכשל" });
+      setState({ kind: "error", message: "Analysis failed" });
     } finally {
       setBusy(false);
     }
   }
 
-  // additional_papers_analysis produces only { papers: [...] }, appended to
-  // the existing deep-analysis review (SPEC Flow 2) — it never replaces the
-  // panel's main "result" state, which stays the deep analysis.
-  async function runAdditionalAnalysis(confirmExtra: boolean) {
-    const titles = titlesInput
-      .split("\n")
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0);
-    if (titles.length === 0 || titles.length > 10) return;
-
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/researchers/${researcherId}/analyses/additional`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ titles, confirmExtra }),
-      });
-      if (res.status === 409) {
-        setState({ kind: "confirm_extra", action: "additional" });
-        return;
-      }
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        setState({ kind: "error", message: body?.error ?? "הניתוח נכשל" });
-        return;
-      }
-      const body: { analysis: AnalysisResponse | null } = await res.json();
-      if (body.analysis) {
-        setAdditionalPapers(await fetchAdditionalPapers(researcherId));
-        setTitlesInput("");
-      }
-    } catch {
-      setState({ kind: "error", message: "הניתוח נכשל" });
-    } finally {
-      setBusy(false);
-    }
-  }
+  // "Ask for another review" on the Researchers screen links here with
+  // ?autoAnalyze=1 so the same Analyze flow (including quota confirmation)
+  // runs immediately instead of requiring an extra click.
+  useEffect(() => {
+    if (state.kind !== "empty") return;
+    if (searchParams.get("autoAnalyze") !== "1") return;
+    if (autoAnalyzeTriggered.current) return;
+    autoAnalyzeTriggered.current = true;
+    runDeepAnalysis(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.kind, searchParams]);
 
   if (state.kind === "loading") {
-    return <p className="text-sm text-gray-500">טוען ניתוח...</p>;
+    return <p className="text-sm text-muted">Loading analysis&hellip;</p>;
   }
 
   if (state.kind === "confirm_extra") {
-    const confirm = () => (state.action === "deep" ? runDeepAnalysis(true) : runAdditionalAnalysis(true));
     return (
-      <div className="rounded border border-amber-300 bg-amber-50 p-4 text-sm" dir="rtl">
-        <p className="mb-2">חרגת ממכסת חמשת הניתוחים היומית. להמשיך בניתוח נוסף?</p>
+      <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg p-4 text-sm text-ink">
+        <p className="mb-2">You&rsquo;ve exceeded the daily quota of five analyses. Continue with another analysis?</p>
         <div className="flex gap-2">
-          <button onClick={confirm} disabled={busy} className="rounded bg-amber-600 px-3 py-1 text-white hover:bg-amber-500 disabled:opacity-50">
-            אישור וביצוע
+          <button
+            onClick={() => runDeepAnalysis(true)}
+            disabled={busy}
+            className="rounded-[var(--radius-input)] bg-warning px-3 py-1.5 text-white transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
+          >
+            Confirm &amp; run
           </button>
-          <button onClick={() => setState({ kind: "empty" })} className="rounded bg-gray-100 px-3 py-1 hover:bg-gray-200">
-            ביטול
+          <button
+            onClick={() => setState({ kind: "empty" })}
+            className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-ink hover:border-accent"
+          >
+            Cancel
           </button>
         </div>
       </div>
@@ -148,10 +181,10 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
 
   if (state.kind === "error") {
     return (
-      <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700" dir="rtl">
+      <div className="rounded-[var(--radius-card)] border border-danger/30 bg-danger-bg p-4 text-sm text-danger">
         <p className="mb-2">{state.message}</p>
-        <button onClick={() => runDeepAnalysis(false)} disabled={busy} className="underline">
-          ניסיון נוסף
+        <button onClick={() => runDeepAnalysis(false)} disabled={busy} className="underline underline-offset-2">
+          Try again
         </button>
       </div>
     );
@@ -159,10 +192,14 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
 
   if (state.kind === "empty") {
     return (
-      <div className="rounded border border-dashed border-gray-300 p-8 text-center text-gray-600" dir="rtl">
+      <div className="rounded-[var(--radius-card)] border border-dashed border-rule p-8 text-center text-ink">
         <p className="mb-3">{ANALYSIS_STATE_LABELS.not_analyzed}</p>
-        <button onClick={() => runDeepAnalysis(false)} disabled={busy} className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500 disabled:opacity-50">
-          {busy ? "מבצע ניתוח..." : "ניתוח"}
+        <button
+          onClick={() => runDeepAnalysis(false)}
+          disabled={busy}
+          className="rounded-[var(--radius-input)] bg-accent px-4 py-2 text-sm font-medium text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
+        >
+          {busy ? "Analyzing…" : "Analyze"}
         </button>
       </div>
     );
@@ -170,71 +207,118 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
 
   const { analysis } = state;
   const review = (analysis.result ?? null) as ResearcherReview | null;
-  const allPapers = review ? [...review.papers, ...additionalPapers] : additionalPapers;
 
   return (
-    <div className="space-y-4" dir="rtl">
+    <div className="space-y-4 rounded-[var(--radius-card)] border border-rule bg-paper p-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{ANALYSIS_STATE_LABELS[analysis.state as AnalysisState]}</span>
+        <span className="text-sm font-medium text-ink">{ANALYSIS_STATE_LABELS[analysis.state as AnalysisState]}</span>
         {analysis.state === "failed" && (
-          <button onClick={() => runDeepAnalysis(false)} disabled={busy} className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-500 disabled:opacity-50">
-            ניסיון נוסף
+          <button
+            onClick={() => runDeepAnalysis(false)}
+            disabled={busy}
+            className="rounded-[var(--radius-input)] bg-accent px-3 py-1.5 text-sm text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90 disabled:opacity-50"
+          >
+            Try again
           </button>
         )}
       </div>
 
+      {analysis.state === "failed" && (
+        <div className="rounded-[var(--radius-card)] border border-danger/30 bg-danger-bg p-3 text-sm text-danger">
+          {analysisErrorMessage(analysis.errorCode ?? "")}
+        </div>
+      )}
+
       {review && (
-        <div className="space-y-3 rounded border border-gray-200 p-4 text-sm">
-          <p>{review.summary}</p>
-          <p className="text-xs text-gray-600">התאמה כללית: {MATCH_LEVEL_LABELS[review.fit as keyof typeof MATCH_LEVEL_LABELS] ?? review.fit}</p>
-          {review.topics.length > 0 && <p className="text-xs text-gray-600">נושאים חוזרים: {review.topics.join(", ")}</p>}
-          {review.thesisDirections.length > 0 && (
+        <div className="space-y-5 rounded-[var(--radius-card)] border border-rule p-4 text-sm text-ink">
+          {/* Decision comes first: priority, supervision risk, and why -- before the descriptive summary. */}
+          <div className="flex flex-wrap items-center gap-2">
+            {review.priority && (
+              <span
+                className={`rounded-[var(--radius-pill)] border px-2.5 py-1 text-xs font-medium text-ink ${
+                  review.priority === "high_priority"
+                    ? "border-success/40 bg-success-bg/60"
+                    : review.priority === "do_not_prioritize"
+                      ? "border-danger/40 bg-danger-bg/60"
+                      : "border-rule bg-paper-2"
+                }`}
+              >
+                {PRIORITY_LABELS[review.priority]}
+              </span>
+            )}
+            <span className="text-xs font-medium text-muted">
+              Overall fit: {MATCH_LEVEL_LABELS[review.fit]}
+            </span>
+          </div>
+
+          {review.supervisionStatus === "unverified" && (
+            <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg/50 p-3 text-sm text-ink">
+              <p className="font-semibold text-warning">{SUPERVISION_STATUS_LABELS.unverified}</p>
+              <p className="mt-1 text-xs text-muted">
+                This researcher&rsquo;s listed title suggests Emeritus or retired status. Verify they still supervise
+                M.Sc. students before contacting.
+              </p>
+            </div>
+          )}
+
+          {review.recommendationReason && (
+            <p className="text-sm leading-relaxed text-ink">{review.recommendationReason}</p>
+          )}
+
+          {review.summary && <p className="text-sm leading-relaxed text-ink">{review.summary}</p>}
+          {review.topics.length > 0 && (
+            <p className="text-xs text-muted">Recurring topics: {review.topics.join(", ")}</p>
+          )}
+
+          <div>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">Fit dimensions</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {(["topicFit", "methodFit", "mechanismFit", "practicalFit"] as const).map((dim) => (
+                <div key={dim} className="rounded-[var(--radius-card)] border border-rule p-2">
+                  <p className="text-xs font-medium text-muted">{FIT_DIMENSION_LABELS[dim]}</p>
+                  <p className="text-sm font-semibold">{MATCH_LEVEL_LABELS[review[dim]?.level ?? "unknown"]}</p>
+                  {review[dim]?.reasoning && <p className="mt-1 text-xs text-muted">{review[dim].reasoning}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {(review.disqualifyingFactors?.length ?? 0) > 0 && (
+            <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg/30 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-warning">Disqualifying factors</p>
+              <ul className="mt-1 list-inside list-disc text-sm text-ink">
+                {review.disqualifyingFactors.map((factor, i) => (
+                  <li key={i}>{factor}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {(review.missingEvidence?.length ?? 0) > 0 && (
             <div>
-              <p className="font-medium">כיווני תזה אפשריים</p>
-              <ul className="list-inside list-disc">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Missing evidence</p>
+              <ul className="mt-1 list-inside list-disc text-sm text-muted">
+                {review.missingEvidence.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {review.thesisDirections.length > 0 ? (
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Possible thesis directions</p>
+              <ul className="mt-1 list-inside list-disc text-sm text-ink">
                 {review.thesisDirections.map((d, i) => (
                   <li key={i}>{d}</li>
                 ))}
               </ul>
             </div>
+          ) : (
+            <p className="text-xs text-muted">No high-confidence thesis direction found for this researcher.</p>
           )}
         </div>
       )}
-
-      {allPapers.length > 0 && (
-        <div className="rounded border border-gray-200 p-4 text-sm">
-          <p className="mb-2 font-medium">סקירת פרסומים</p>
-          <ul className="space-y-2">
-            {allPapers.map((paper) => (
-              <li key={paper.paperId} className="rounded border border-gray-100 p-2">
-                {paper.question && <p>שאלת מחקר: {paper.question}</p>}
-                {paper.method && <p>שיטה: {paper.method}</p>}
-                {paper.results && <p>תוצאות: {paper.results}</p>}
-                <p className="text-xs text-gray-500">מקורות: {paper.evidence.length}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div>
-        <h3 className="mb-2 text-sm font-semibold">הוספת פרסומים לניתוח</h3>
-        <p className="mb-2 text-xs text-gray-500">עד 10 כותרות, שורה לכל כותרת. הניתוח יתווסף לסקירה הקיימת.</p>
-        <textarea
-          value={titlesInput}
-          onChange={(e) => setTitlesInput(e.target.value)}
-          rows={3}
-          placeholder="כותרת פרסום אחת בכל שורה"
-          className="w-full rounded border border-gray-300 p-2 text-sm"
-        />
-        <button
-          onClick={() => runAdditionalAnalysis(false)}
-          disabled={busy}
-          className="mt-2 rounded bg-gray-800 px-3 py-1 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
-        >
-          {busy ? "מנתח..." : "ניתוח פרסומים נוספים"}
-        </button>
-      </div>
     </div>
   );
 }
