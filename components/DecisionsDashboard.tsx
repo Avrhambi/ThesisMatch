@@ -31,7 +31,14 @@ const STATUS_ORDER: DecisionStatus[] = [
   "closed",
 ];
 
-export default function DecisionsDashboard() {
+interface DecisionsDashboardProps {
+  // Clicking a status tile drives the researcher list's decision filter,
+  // owned by the parent screen. activeStatus highlights the current one.
+  activeStatus: DecisionStatus | "";
+  onSelectStatus: (status: DecisionStatus) => void;
+}
+
+export default function DecisionsDashboard({ activeStatus, onSelectStatus }: DecisionsDashboardProps) {
   const [counts, setCounts] = useState<Record<string, number> | null>(null);
   const [events, setEvents] = useState<RecentEvent[] | null>(null);
 
@@ -60,10 +67,19 @@ export default function DecisionsDashboard() {
       {counts && (
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {STATUS_ORDER.map((status) => (
-            <div key={status} className="rounded-[var(--radius-card)] border border-rule bg-paper-2 p-3 text-center">
+            <button
+              key={status}
+              type="button"
+              onClick={() => onSelectStatus(status)}
+              className={`rounded-[var(--radius-card)] border p-3 text-center transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] ${
+                activeStatus === status
+                  ? "border-accent bg-paper-2"
+                  : "border-rule bg-paper-2 hover:border-accent/50"
+              }`}
+            >
               <p className="font-mono text-xl text-ink">{counts[status] ?? 0}</p>
               <p className="text-xs text-muted">{DECISION_LABELS[status]}</p>
-            </div>
+            </button>
           ))}
         </div>
       )}

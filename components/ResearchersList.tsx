@@ -48,9 +48,15 @@ type RefreshState =
   | { kind: "done"; result: RefreshResponse }
   | { kind: "error" };
 
-export default function ResearchersList() {
+interface ResearchersListProps {
+  // The decision filter is lifted to the parent screen so the decisions
+  // dashboard tiles can drive it (click a status -> filter this list).
+  decision: DecisionStatus | "";
+  onDecisionChange: (decision: DecisionStatus | "") => void;
+}
+
+export default function ResearchersList({ decision, onDecisionChange }: ResearchersListProps) {
   const [branch, setBranch] = useState<ResearchBranch | "">("");
-  const [decision, setDecision] = useState<DecisionStatus | "">("");
   const [matchLevel, setMatchLevel] = useState<MatchLevel | "">("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -70,6 +76,16 @@ export default function ResearchersList() {
 
   function applyFilter<T>(setFilter: (value: T) => void, value: T) {
     setFilter(value);
+    setPage(1);
+    setState({ kind: "loading" });
+  }
+
+  // Reset to page 1 and show the loading state whenever the parent changes the
+  // decision filter (e.g. a dashboard tile click). Done during render via the
+  // "adjust state when a prop changes" pattern rather than in an effect.
+  const [prevDecision, setPrevDecision] = useState(decision);
+  if (decision !== prevDecision) {
+    setPrevDecision(decision);
     setPage(1);
     setState({ kind: "loading" });
   }
@@ -168,7 +184,7 @@ export default function ResearchersList() {
 
         <select
           value={decision}
-          onChange={(e) => applyFilter(setDecision, e.target.value as DecisionStatus | "")}
+          onChange={(e) => onDecisionChange(e.target.value as DecisionStatus | "")}
           className={inputClass}
         >
           <option value="">All statuses (active)</option>
