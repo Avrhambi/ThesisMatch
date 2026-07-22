@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { MATCH_LEVEL_LABELS } from "../lib/labels";
+import { MATCH_LEVEL_LABELS, analysisErrorMessage } from "../lib/labels";
 import type { MatchLevel } from "../lib/types";
 
 interface ReadyItem {
@@ -17,13 +16,17 @@ const POLL_INTERVAL_MS = 20000;
 const AUTO_FILL_TARGET = 5;
 const AUTO_FILL_MAX_ATTEMPTS = 15;
 
-type AskState = { kind: "idle" } | { kind: "running" } | { kind: "none_available" } | { kind: "error" };
+type AskState =
+  | { kind: "idle" }
+  | { kind: "running" }
+  | { kind: "confirm_extra"; candidateId: string }
+  | { kind: "none_available" }
+  | { kind: "error"; message?: string };
 
 export default function ReadyForReviewPanel() {
   const [items, setItems] = useState<ReadyItem[] | null>(null);
   const [askState, setAskState] = useState<AskState>({ kind: "idle" });
   const [autoFilling, setAutoFilling] = useState(false);
-  const router = useRouter();
   const cancelledRef = useRef(false);
   const autoFillStartedRef = useRef(false);
 
@@ -102,17 +105,41 @@ export default function ReadyForReviewPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function askForAnother() {
+  // Runs the next candidate's deep analysis in place: no navigation away from
+  // the dashboard. When it completes, the researcher shows up in the list
+  // above via loadAndReturn. If the daily quota is exhausted the API returns
+  // 409 and we surface a confirm step before spending an extra analysis.
+  async function askForAnother(confirmExtra = false, presetCandidateId?: string) {
     setAskState({ kind: "running" });
     try {
-      const res = await fetch("/api/researchers/next-candidate");
-      if (res.status === 404) {
-        setAskState({ kind: "none_available" });
+      let candidateId = presetCandidateId;
+      if (!candidateId) {
+        const res = await fetch("/api/researchers/next-candidate");
+        if (res.status === 404) {
+          setAskState({ kind: "none_available" });
+          return;
+        }
+        if (!res.ok) throw new Error("failed");
+        const { candidate }: { candidate: { id: string } } = await res.json();
+        candidateId = candidate.id;
+      }
+
+      const analyzeRes = await fetch(`/api/researchers/${candidateId}/analyses/deep`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmExtra }),
+      });
+      if (analyzeRes.status === 409) {
+        setAskState({ kind: "confirm_extra", candidateId });
         return;
       }
-      if (!res.ok) throw new Error("failed");
-      const { candidate }: { candidate: { id: string } } = await res.json();
-      router.push(`/researchers/${candidate.id}?autoAnalyze=1`);
+      if (!analyzeRes.ok) {
+        const body = await analyzeRes.json().catch(() => null);
+        setAskState({ kind: "error", message: analysisErrorMessage(body?.error ?? "") });
+        return;
+      }
+      await loadAndReturn();
+      setAskState({ kind: "idle" });
     } catch {
       setAskState({ kind: "error" });
     }
@@ -125,11 +152,11 @@ export default function ReadyForReviewPanel() {
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold text-ink">Ready for review ({items?.length ?? 0})</h2>
         <button
-          onClick={askForAnother}
+          onClick={() => askForAnother()}
           disabled={askState.kind === "running" || autoFilling}
           className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-sm text-ink transition-colors duration-[var(--dur-short)] ease-[var(--ease-out)] hover:border-accent hover:text-accent disabled:opacity-50"
         >
-          {askState.kind === "running" ? "Finding a candidate…" : "Ask for another review"}
+          {askState.kind === "running" ? "Analyzing…" : "Ask for another review"}
         </button>
       </div>
 
@@ -139,10 +166,32 @@ export default function ReadyForReviewPanel() {
         </p>
       )}
 
+      {askState.kind === "confirm_extra" && (
+        <div className="mb-3 rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg/50 p-3 text-sm text-ink">
+          <p className="mb-2">You&rsquo;ve used today&rsquo;s five standard analyses. Run another as an extra?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => askForAnother(true, askState.candidateId)}
+              className="rounded-[var(--radius-input)] bg-accent px-3 py-1.5 text-accent-ink transition-opacity duration-[var(--dur-short)] ease-[var(--ease-out)] hover:opacity-90"
+            >
+              Confirm &amp; run
+            </button>
+            <button
+              onClick={() => setAskState({ kind: "idle" })}
+              className="rounded-[var(--radius-input)] border border-rule bg-paper-2 px-3 py-1.5 text-ink hover:border-accent"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {askState.kind === "none_available" && (
         <p className="mb-3 text-sm text-muted">Every discovered researcher has already been analyzed.</p>
       )}
-      {askState.kind === "error" && <p className="mb-3 text-sm text-danger">Could not start another analysis.</p>}
+      {askState.kind === "error" && (
+        <p className="mb-3 text-sm text-danger">{askState.message ?? "Could not start another analysis."}</p>
+      )}
 
       <ul className="space-y-2">
         {(items ?? []).map((item) => (
