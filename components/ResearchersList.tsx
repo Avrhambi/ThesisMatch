@@ -60,7 +60,6 @@ export default function ResearchersList({ decision, onDecisionChange }: Research
     const timer = setTimeout(() => {
       setSearch(searchInput.trim());
       setPage(1);
-      setState({ kind: "loading" });
     }, 250);
     return () => clearTimeout(timer);
   }, [searchInput]);
@@ -68,21 +67,27 @@ export default function ResearchersList({ decision, onDecisionChange }: Research
   function applyFilter<T>(setFilter: (value: T) => void, value: T) {
     setFilter(value);
     setPage(1);
-    setState({ kind: "loading" });
   }
 
-  // Reset to page 1 and show the loading state whenever the parent changes the
-  // decision filter (e.g. a dashboard tile click). Done during render via the
-  // "adjust state when a prop changes" pattern rather than in an effect.
+  // Reset to page 1 whenever the parent changes the decision filter (e.g. a
+  // dashboard tile click). Done during render via the "adjust state when a
+  // prop changes" pattern rather than in an effect.
   const [prevDecision, setPrevDecision] = useState(decision);
   if (decision !== prevDecision) {
     setPrevDecision(decision);
     setPage(1);
-    setState({ kind: "loading" });
   }
 
   useEffect(() => {
     let cancelled = false;
+    // The fetch effect is the single owner of the "loading" state: it flips to
+    // loading at the start of every fetch so the spinner always corresponds to
+    // an in-flight request. Previously "loading" was also set from the search
+    // debounce and filter handlers, which could set it WITHOUT changing any
+    // fetch dependency (e.g. the mount-time debounce with an empty query) --
+    // then no refetch ran and the list stayed stuck on "Loading…".
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setState({ kind: "loading" });
 
     const params = new URLSearchParams();
     if (branch) params.set("branch", branch);
