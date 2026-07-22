@@ -235,12 +235,12 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
           <div className="flex flex-wrap items-center gap-2">
             {review.priority && (
               <span
-                className={`rounded-[var(--radius-pill)] px-2.5 py-1 text-xs font-semibold ${
+                className={`rounded-[var(--radius-pill)] border px-2.5 py-1 text-xs font-medium text-ink ${
                   review.priority === "high_priority"
-                    ? "bg-success-bg text-success"
+                    ? "border-success/40 bg-success-bg/60"
                     : review.priority === "do_not_prioritize"
-                      ? "bg-danger-bg text-danger"
-                      : "bg-paper-2 text-ink"
+                      ? "border-danger/40 bg-danger-bg/60"
+                      : "border-rule bg-paper-2"
                 }`}
               >
                 {PRIORITY_LABELS[review.priority]}
@@ -252,9 +252,9 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
           </div>
 
           {review.supervisionStatus === "unverified" && (
-            <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg p-3 text-sm text-warning">
-              <p className="font-semibold">{SUPERVISION_STATUS_LABELS.unverified}</p>
-              <p className="mt-1 text-xs">
+            <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg/50 p-3 text-sm text-ink">
+              <p className="font-semibold text-warning">{SUPERVISION_STATUS_LABELS.unverified}</p>
+              <p className="mt-1 text-xs text-muted">
                 This researcher&rsquo;s listed title suggests Emeritus or retired status. Verify they still supervise
                 M.Sc. students before contacting.
               </p>
@@ -284,9 +284,9 @@ export default function AnalysisPanel({ researcherId }: { researcherId: string }
           </div>
 
           {(review.disqualifyingFactors?.length ?? 0) > 0 && (
-            <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg/50 p-3">
+            <div className="rounded-[var(--radius-card)] border border-warning/30 bg-warning-bg/30 p-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-warning">Disqualifying factors</p>
-              <ul className="mt-1 list-inside list-disc text-sm text-warning">
+              <ul className="mt-1 list-inside list-disc text-sm text-ink">
                 {review.disqualifyingFactors.map((factor, i) => (
                   <li key={i}>{factor}</li>
                 ))}
